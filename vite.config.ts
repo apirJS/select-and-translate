@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     emptyOutDir: true,
     sourcemap: mode === 'development',
+    minify: false,
     rollupOptions: {
       input: {
         popup: path.resolve(__dirname, 'src/html/popup.html'),
@@ -41,7 +42,14 @@ export default defineConfig(({ mode }) => ({
       output: {
         entryFileNames: 'assets/js/[name].js',
         chunkFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[name].[ext]',
+        assetFileNames: ({ name }) => {
+          if (name && name.endsWith('.css')) {
+            return 'assets/css/[name].[ext]';
+          } else if (name && name.endsWith('.html')) {
+            return '[name].[ext]';
+          }
+          return 'assets/[name].[ext]';
+        },
         esModule: true,
         manualChunks: undefined,
       },

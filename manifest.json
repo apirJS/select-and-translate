@@ -15,11 +15,18 @@
   ],
   "action": {
     "default_icon": {
-      "16": "logo-16.png",
-      "24": "logo-24.png",
-      "32": "logo-32.png"
+      "16": "assets/img/icon-16.png",
+      "24": "assets/img/icon-24.png",
+      "32": "assets/img/icon-32.png"
     },
     "default_popup": "popup.html",
     "default_title": "Select and Translate"
-  }
+  },
+  "icons": {
+    "16": "assets/img/icon-16.png",
+    "48": "assets/img/icon-48.png",
+    "128": "assets/img/icon-128.png",
+    "256": "assets/img/icon-256.png"
+  },
+  "permissions": ["activeTab", "scripting", "tabs"]
 }
