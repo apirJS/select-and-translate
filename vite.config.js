@@ -3,11 +3,13 @@ import path from 'path';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig(({ mode }) => ({
+  publicDir: false,
   plugins: [
     viteStaticCopy({
       targets: [
-        { src: 'public/*', dest: '' },
+        { src: 'manifest.json', dest: '' },
         { src: 'src/html/*', dest: '' },
+        { src: 'public/*.png', dest: 'assets/img' },
       ],
     }),
   ],
@@ -17,8 +19,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    outDir: 'dist',
-    assetsDir: 'assets',
     emptyOutDir: true,
     sourcemap: mode === 'development',
     rollupOptions: {
@@ -28,9 +28,10 @@ export default defineConfig(({ mode }) => ({
         content: path.resolve(__dirname, 'src/content.ts'),
       },
       output: {
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name].js',
+        chunkFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: 'assets/[name].[ext]',
+        esModule: true,
       },
     },
   },

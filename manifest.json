@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/chrome-manifest.json",
+  "manifest_version": 3,
+  "name": "select and translate",
+  "version": "0.0.1",
+  "description": "Select area on your screen and translate it!",
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"]
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "16": "logo-16.png",
+      "24": "logo-24.png",
+      "32": "logo-32.png"
+    },
+    "default_popup": "popup.html",
+    "default_title": "Select and Translate"
+  }
+}

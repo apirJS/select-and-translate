@@ -1,7 +1,7 @@
 {
   "name": "select-and-translate",
-  "private": true,
   "version": "0.0.0",
+  "description": "Select area on your screen and translate it!",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,11 +10,9 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.313",
+    "@vitejs/plugin-react": "^4.3.4",
     "typescript": "~5.7.2",
-    "vite": "^6.2.0"
-  },
-  "dependencies": {
-    "vite-plugin-html": "^3.2.2",
+    "vite": "^6.2.0",
     "vite-plugin-static-copy": "^2.3.1"
   }
 }
