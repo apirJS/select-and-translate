@@ -17,5 +17,8 @@
     "typescript": "~5.7.2",
     "vite": "^6.2.0",
     "vite-plugin-static-copy": "^2.3.1"
+  },
+  "dependencies": {
+    "tesseract.js": "^6.0.1"
   }
 }

@@ -28,7 +28,7 @@
     "128": "assets/img/icon-128.png",
     "256": "assets/img/icon-256.png"
   },
-  "permissions": ["scripting", "tabs"],
+  "permissions": ["scripting", "tabs", "activeTab"],
   "host_permissions": ["<all_urls>"],
   "commands": {
     "scan": {

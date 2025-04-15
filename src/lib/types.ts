@@ -1,3 +1,4 @@
 export type Message = {
-  action: 'scan';
+  action: 'scan' | 'translate';
+  payload: { imageDataUrl: string };
 };
