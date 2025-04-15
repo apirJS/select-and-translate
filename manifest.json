@@ -28,5 +28,14 @@
     "128": "assets/img/icon-128.png",
     "256": "assets/img/icon-256.png"
   },
-  "permissions": ["activeTab", "scripting", "tabs"]
+  "permissions": ["scripting", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "commands": {
+    "scan": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y"
+      },
+      "description": "Select and Translate"
+    }
+  }
 }
