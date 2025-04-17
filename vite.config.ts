@@ -7,11 +7,18 @@ function moveHtmlToRoot(): import('vite').Plugin {
   return {
     name: 'move-html-to-root',
     closeBundle: async () => {
-      const from = path.resolve(__dirname, 'dist/src/html/popup.html');
-      const to = path.resolve(__dirname, 'dist/popup.html');
+      const htmlDir = path.resolve(__dirname, 'dist/src/html');
+      const distDir = path.resolve(__dirname, 'dist');
 
-      if (await fs.pathExists(from)) {
-        await fs.move(from, to, { overwrite: true });
+      if (await fs.pathExists(htmlDir)) {
+        const files = await fs.readdir(htmlDir);
+        for (const file of files) {
+          if (file.endsWith('.html')) {
+            const from = path.resolve(htmlDir, file);
+            const to = path.resolve(distDir, file);
+            await fs.move(from, to, { overwrite: true });
+          }
+        }
         await fs.remove(path.resolve(__dirname, 'dist/src'));
       }
     },
@@ -26,6 +33,7 @@ export default defineConfig(({ mode }) => ({
       targets: [
         { src: 'manifest.json', dest: '' },
         { src: 'public/*.png', dest: 'assets/img' },
+        { src: 'tesseract/*', dest: 'assets/tesseract' },
       ],
     }),
   ],
@@ -36,6 +44,7 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       input: {
         popup: path.resolve(__dirname, 'src/html/popup.html'),
+        offscreen: path.resolve(__dirname, 'src/html/offscreen.html'),
         background: path.resolve(__dirname, 'src/background.ts'),
         content: path.resolve(__dirname, 'src/content.ts'),
       },

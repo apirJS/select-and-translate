@@ -30,6 +30,15 @@ export function applyEventListener(): Promise<{
     );
     if (!div) return;
 
+    const onEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        div.remove();
+        resolve({ x: 0, y: 0, width: 0, height: 0 });
+      }
+    };
+
+    window.addEventListener('keydown', onEscape);
+
     const onMouseDown = (e: PointerEvent) => {
       e.preventDefault();
 
@@ -73,11 +82,13 @@ export function applyEventListener(): Promise<{
         const width = parseInt(selectionBox.style.width || '0', 10) * scale;
         const height = parseInt(selectionBox.style.height || '0', 10) * scale;
 
-        resolve({ x, y, width, height });
-
         div.removeEventListener('pointerup', onMouseUp);
         div.removeEventListener('pointermove', onMouseMove);
+        div.removeEventListener('pointerdown', onMouseDown);
+        window.removeEventListener('keydown', onEscape);
         document.body.removeChild(div);
+
+        resolve({ x, y, width, height });
       };
 
       div.addEventListener('pointermove', onMouseMove, { passive: false });
@@ -87,6 +98,7 @@ export function applyEventListener(): Promise<{
     div.addEventListener('pointerdown', onMouseDown, { passive: false });
   });
 }
+
 
 export function cropImage(
   imageDataUrl: string,

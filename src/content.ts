@@ -1,21 +1,30 @@
-import { applyEventListener, coatTheScreen, cropImage } from './lib/dom';
+import { applyEventListener, coatTheScreen } from './lib/dom';
 import { Message } from './lib/types';
 
-chrome.runtime.onMessage.addListener(async function (message: Message) {
-  if (message.action === 'scan') {
-    coatTheScreen();
-    const { imageDataUrl } = message.payload;
-    const { x, y, width, height } = await applyEventListener();
-    const croppedImageDataUrl = await cropImage(imageDataUrl, {
-      x,
-      y,
-      width,
-      height,
-    });
-
-    chrome.runtime.sendMessage({
-      action: 'translate',
-      payload: { imageDataUrl: croppedImageDataUrl },
-    } as Message);
+chrome.runtime.onMessage.addListener(function (message: Message) {
+  if (chrome.runtime.lastError) {
+    console.error('Something went wrong:', chrome.runtime.lastError.message);
+    return;
   }
+
+  (async () => {
+    try {
+      if (message.action === 'user-select') {
+        coatTheScreen();
+        const { x, y, width, height } = await applyEventListener();
+
+        chrome.runtime.sendMessage({
+          action: 'capture',
+          payload: {
+            rectangle: { x, y, width, height },
+            tabId: message.payload.tabId,
+          },
+        } as Message);
+      }
+    } catch (error) {
+      console.error('Something went wrong:', error);
+    }
+  })();
+
+  return true;
 });

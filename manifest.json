@@ -28,7 +28,7 @@
     "128": "assets/img/icon-128.png",
     "256": "assets/img/icon-256.png"
   },
-  "permissions": ["scripting", "tabs", "activeTab"],
+  "permissions": ["scripting", "tabs", "activeTab", "offscreen"],
   "host_permissions": ["<all_urls>"],
   "commands": {
     "scan": {
@@ -37,5 +37,22 @@
       },
       "description": "Select and Translate"
     }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["offscreen.html"],
+      "matches": ["<all_urls>"]
+    },
+    {
+      "resources": [
+        "assets/tesseract/worker.min.js",
+        "assets/tesseract/core/*",
+        "assets/tesseract/langs/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval' http://localhost:* http://127.0.0.1:*"
   }
 }
