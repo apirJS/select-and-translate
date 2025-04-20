@@ -1,3 +1,5 @@
+import { Rectangle } from './types';
+
 export function coatTheScreen() {
   const existingTag = document.querySelector<HTMLDivElement>(
     '#select-and-translate-overlay'
@@ -18,12 +20,7 @@ export function coatTheScreen() {
   document.body.appendChild(div);
 }
 
-export function applyEventListener(): Promise<{
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}> {
+export function applyEventListener(): Promise<Rectangle> {
   return new Promise((resolve) => {
     const div = document.querySelector<HTMLDivElement>(
       '#select-and-translate-overlay'
@@ -86,7 +83,10 @@ export function applyEventListener(): Promise<{
         div.removeEventListener('pointermove', onMouseMove);
         div.removeEventListener('pointerdown', onMouseDown);
         window.removeEventListener('keydown', onEscape);
-        document.body.removeChild(div);
+
+        if (document.body.contains(div)) {
+          document.body.removeChild(div);
+        }
 
         resolve({ x, y, width, height });
       };
@@ -99,32 +99,31 @@ export function applyEventListener(): Promise<{
   });
 }
 
-
 export function cropImage(
   imageDataUrl: string,
-  crop: { x: number; y: number; width: number; height: number }
+  rectangle: Rectangle
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
 
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = crop.width;
-      canvas.height = crop.height;
+      canvas.width = rectangle.width;
+      canvas.height = rectangle.height;
 
       const ctx = canvas.getContext('2d');
       if (!ctx) return reject(new Error('Canvas context not available'));
 
       ctx.drawImage(
         img,
-        crop.x,
-        crop.y,
-        crop.width,
-        crop.height,
+        rectangle.x,
+        rectangle.y,
+        rectangle.width,
+        rectangle.height,
         0,
         0,
-        crop.width,
-        crop.height
+        rectangle.width,
+        rectangle.height
       );
 
       const croppedDataUrl = canvas.toDataURL('image/png');
@@ -136,3 +135,4 @@ export function cropImage(
     img.src = imageDataUrl;
   });
 }
+

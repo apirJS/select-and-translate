@@ -27,13 +27,16 @@ function moveHtmlToRoot(): import('vite').Plugin {
 
 export default defineConfig(({ mode }) => ({
   publicDir: false,
+  define: {
+    Module: {},
+  },
   plugins: [
     moveHtmlToRoot(),
     viteStaticCopy({
       targets: [
         { src: 'manifest.json', dest: '' },
         { src: 'public/*.png', dest: 'assets/img' },
-        { src: 'tesseract/*', dest: 'assets/tesseract' },
+        { src: 'public/ocr/*', dest: 'ocr' },
       ],
     }),
   ],
@@ -46,7 +49,7 @@ export default defineConfig(({ mode }) => ({
         popup: path.resolve(__dirname, 'src/html/popup.html'),
         offscreen: path.resolve(__dirname, 'src/html/offscreen.html'),
         background: path.resolve(__dirname, 'src/background.ts'),
-        content: path.resolve(__dirname, 'src/content.ts'),
+        sandbox: path.resolve(__dirname, 'src/html/sandbox.html'),
       },
       output: {
         entryFileNames: 'assets/js/[name].js',

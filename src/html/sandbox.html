@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <script type="module">
+      import * as ocr from 'esearch-ocr';
+      import * as ort from 'onnxruntime-web';
+
+      (async () => {
+        window.addEventListener('message', async (ev) => {
+          if (ev.data?.type === 'run-ocr') {
+            const model = await ocr.init({
+              detPath: ev.data.detModelUrl,
+              recPath: ev.data.recModelUrl,
+              dic: ev.data.dic,
+              ort,
+            });
+
+            const result = await model.ocr(ev.data.imageDataUrl);
+
+            window.parent.postMessage(
+              {
+                type: 'ocr-result',
+                text: result.parragraphs.map((item) => item.text).join('\n'),
+              },
+              '*'
+            );
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

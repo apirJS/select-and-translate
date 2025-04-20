@@ -40,19 +40,14 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["offscreen.html"],
-      "matches": ["<all_urls>"]
-    },
-    {
-      "resources": [
-        "assets/tesseract/worker.min.js",
-        "assets/tesseract/core/*",
-        "assets/tesseract/langs/*"
-      ],
+      "resources": ["offscreen.html", "popup.html", "ocr/*"],
       "matches": ["<all_urls>"]
     }
   ],
+  "sandbox": {
+    "pages": ["sandbox.html"]
+  },
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval' http://localhost:* http://127.0.0.1:*"
+    "sandbox": "sandbox allow-scripts; script-src 'unsafe-eval';"
   }
 }

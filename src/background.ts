@@ -22,8 +22,28 @@ async function requestOCR(
         payload: { imageDataUrl, rectangle: rect },
       },
       (response: MessageResponse) => {
-        if (response.success) resolve(response.text);
-        else reject(new Error('Unknown OCR failure'));
+        if (chrome.runtime.lastError) {
+          console.error(
+            '[service_worker] Runtime error:',
+            chrome.runtime.lastError.message
+          );
+          reject(new Error('Extension runtime error'));
+          return;
+        }
+
+        if (!response) {
+          console.error(
+            '[service_worker] No response received from offscreen.'
+          );
+          reject(new Error('No response from OCR worker'));
+          return;
+        }
+
+        if (response.success) {
+          resolve(response.text);
+        } else {
+          reject(new Error(response.error || 'Unknown OCR failure'));
+        }
       }
     );
   });
@@ -37,13 +57,20 @@ chrome.commands.onCommand.addListener(function () {
 
   chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
     if (!tab) {
-      console.error('No active tab found.');
+      console.error('[service_worker] No active tab found.');
+      return;
+    }
+
+    if (tab.url?.startsWith('chrome://')) {
+      console.error(
+        '[service_worker] Command cannot be executed on chrome:// pages.'
+      );
       return;
     }
 
     const tabId = tab.id;
     if (!tabId) {
-      console.error('Failed to retrieve tab ID.');
+      console.error('[service_worker] Failed to retrieve tab ID.');
       return;
     }
 
@@ -53,14 +80,6 @@ chrome.commands.onCommand.addListener(function () {
         files: ['/assets/js/content.js'],
       },
       () => {
-        if (chrome.runtime.lastError) {
-          console.error(
-            'Something went wrong while executing the script:',
-            chrome.runtime.lastError.message
-          );
-          return;
-        }
-
         try {
           chrome.tabs.sendMessage(tabId, {
             action: 'user-select',
@@ -69,14 +88,17 @@ chrome.commands.onCommand.addListener(function () {
             },
           } as Message);
         } catch (err) {
-          console.error('Error sending message to content script:', err);
+          console.error(
+            '[service_worker] Error sending message to content script:',
+            err
+          );
         }
       }
     );
   });
 });
 
-chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
+chrome.runtime.onMessage.addListener((message) => {
   if (chrome.runtime.lastError) {
     console.error('Something went wrong:', chrome.runtime.lastError.message);
     return;
@@ -93,18 +115,15 @@ chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
                 imageDataUrl,
                 message.payload.rectangle
               );
-              console.log('OCR result:', text);
-              sendResponse({ success: true, text });
+              console.log('[service_worker] OCR result:', text);
             } catch (err) {
-              console.error('OCR error:', err);
-              sendResponse({ success: false, error: (err as Error).message });
+              console.error('[service_worker] OCR error:', err);
             }
           }
         );
       }
     } catch (err) {
-      console.error('Unexpected error:', err);
-      sendResponse({ success: false, error: (err as Error).message });
+      console.error('[service_worker] Unexpected error:', err);
     }
   })();
 
