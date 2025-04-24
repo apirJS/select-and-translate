@@ -36,7 +36,6 @@ export default defineConfig(({ mode }) => ({
       targets: [
         { src: 'manifest.json', dest: '' },
         { src: 'public/*.png', dest: 'assets/img' },
-        { src: 'public/ocr/*', dest: 'ocr' },
       ],
     }),
   ],
@@ -47,9 +46,7 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       input: {
         popup: path.resolve(__dirname, 'src/html/popup.html'),
-        offscreen: path.resolve(__dirname, 'src/html/offscreen.html'),
         background: path.resolve(__dirname, 'src/background.ts'),
-        sandbox: path.resolve(__dirname, 'src/html/sandbox.html'),
       },
       output: {
         entryFileNames: 'assets/js/[name].js',

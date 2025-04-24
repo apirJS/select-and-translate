@@ -3,6 +3,7 @@ export type Message =
       action: 'user-select';
       payload: {
         tabId: number;
+        imageDataUrl: string;
       };
     }
   | {

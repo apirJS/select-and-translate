@@ -1,31 +1,25 @@
-import { applyEventListener, coatTheScreen } from './lib/dom';
+import { appendCanvasToViewport } from './lib/dom';
 import { Message } from './lib/types';
+import * as browser from 'webextension-polyfill';
 
-chrome.runtime.onMessage.addListener(function (message: Message) {
-  if (chrome.runtime.lastError) {
+browser.runtime.onMessage.addListener(async (message: unknown) => {
+  if (browser.runtime.lastError) {
     console.error(
-      '[content] Runtime error: ',
-      chrome.runtime.lastError.message
+      '[content.js] Runtime error: ',
+      browser.runtime.lastError.message
     );
     return;
   }
 
-  (async () => {
-    try {
-      if (message.action === 'user-select') {
-        coatTheScreen();
-        const rectangle = await applyEventListener();
-
-        chrome.runtime.sendMessage({
-          action: 'capture',
-          payload: {
-            rectangle,
-            tabId: message.payload.tabId,
-          },
-        } as Message);
-      }
-    } catch (error) {
-      console.error('[content] Something went wrong: ', error);
+  try {
+    const typedMessage = message as Message;
+    if (typedMessage.action === 'user-select') {
+      const croppedCanvas = await appendCanvasToViewport(
+        typedMessage.payload.imageDataUrl
+      );
+      return croppedCanvas.toDataURL('image/png');
     }
-  })();
+  } catch (error) {
+    console.error('[content.js] Something went wrong: ', error);
+  }
 });

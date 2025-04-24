@@ -1,70 +1,61 @@
-import { Message, MessageResponse, Rectangle } from './lib/types';
+import * as browser from 'webextension-polyfill';
+import { Message } from './lib/types';
+import { NamedError } from './lib/utils';
+console.log('[service_worker] Background script loaded');
 
-async function ensureOffscreen() {
-  if (await chrome.offscreen.hasDocument()) return;
-  await chrome.offscreen.createDocument({
-    url: 'offscreen.html',
-    reasons: ['DOM_SCRAPING'],
-    justification: 'Run OCR with tesseract.js inside Worker',
-  });
-}
+async function requestTranslation(imageDataUrl: string): Promise<string> {
+  try {
+    const base64Image = imageDataUrl.replace(/^data:image\/[a-z]+;base64,/, '');
 
-async function requestOCR(
-  imageDataUrl: string,
-  rect: Rectangle
-): Promise<string> {
-  await ensureOffscreen();
-
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(
+    const response = await fetch(
+      'https://translate.apir.live/api/translate?from=auto&to=indonesia',
       {
-        action: 'ocr',
-        payload: { imageDataUrl, rectangle: rect },
-      },
-      (response: MessageResponse) => {
-        if (chrome.runtime.lastError) {
-          console.error(
-            '[service_worker] Runtime error:',
-            chrome.runtime.lastError.message
-          );
-          reject(new Error('Extension runtime error'));
-          return;
-        }
-
-        if (!response) {
-          console.error(
-            '[service_worker] No response received from offscreen.'
-          );
-          reject(new Error('No response from OCR worker'));
-          return;
-        }
-
-        if (response.success) {
-          resolve(response.text);
-        } else {
-          reject(new Error(response.error || 'Unknown OCR failure'));
-        }
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: base64Image,
+        }),
       }
     );
-  });
+
+    if (!response.ok) {
+      throw new NamedError(
+        'FetchError',
+        `HTTP error! Status: ${response.status}`
+      );
+    }
+
+    const result = await response.json();
+    
+    return result;
+  } catch (error) {
+    throw new NamedError(
+      'FetchError',
+      `Failed to request translation: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
 }
 
-chrome.commands.onCommand.addListener(function () {
-  if (chrome.runtime.lastError) {
-    console.error('Something went wrong:', chrome.runtime.lastError.message);
+browser.commands.onCommand.addListener(async (command) => {
+  if (browser.runtime.lastError) {
+    console.error('Something went wrong:', browser.runtime.lastError.message);
     return;
   }
 
-  chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+  console.log('[service_worker] Command received:', command);
+
+  try {
+    const [tab] = await browser.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+
     if (!tab) {
       console.error('[service_worker] No active tab found.');
-      return;
-    }
-
-    if (tab.url?.startsWith('chrome://')) {
-      console.error(
-        '[service_worker] Command cannot be executed on chrome:// pages.'
-      );
       return;
     }
 
@@ -74,58 +65,37 @@ chrome.commands.onCommand.addListener(function () {
       return;
     }
 
-    chrome.scripting.executeScript(
-      {
-        target: { tabId: tabId },
-        files: ['/assets/js/content.js'],
+    await browser.scripting.executeScript({
+      target: { tabId: tabId },
+      files: ['/assets/js/content.js'],
+    });
+
+    const imageDataUrl = await browser.tabs.captureVisibleTab(undefined, {
+      format: 'png',
+    });
+    const croppedImageDataUrl: string = await browser.tabs.sendMessage(tabId, {
+      action: 'user-select',
+      payload: {
+        tabId,
+        imageDataUrl,
       },
-      () => {
-        try {
-          chrome.tabs.sendMessage(tabId, {
-            action: 'user-select',
-            payload: {
-              tabId,
-            },
-          } as Message);
-        } catch (err) {
-          console.error(
-            '[service_worker] Error sending message to content script:',
-            err
-          );
-        }
-      }
-    );
-  });
-});
+    } as Message);
 
-chrome.runtime.onMessage.addListener((message) => {
-  if (chrome.runtime.lastError) {
-    console.error('Something went wrong:', chrome.runtime.lastError.message);
-    return;
-  }
-
-  (async () => {
-    try {
-      if (message.action === 'capture') {
-        chrome.tabs.captureVisibleTab(
-          { format: 'png' },
-          async (imageDataUrl: string) => {
-            try {
-              const text = await requestOCR(
-                imageDataUrl,
-                message.payload.rectangle
-              );
-              console.log('[service_worker] OCR result:', text);
-            } catch (err) {
-              console.error('[service_worker] OCR error:', err);
-            }
-          }
-        );
-      }
-    } catch (err) {
-      console.error('[service_worker] Unexpected error:', err);
+    if (!croppedImageDataUrl) {
+      console.error(
+        '[service_worker] No image data received from content script'
+      );
+      return;
     }
-  })();
 
-  return true;
+    console.log('[service_worker] Cropped Image: ', croppedImageDataUrl);
+
+    const result = await requestTranslation(croppedImageDataUrl);
+    console.log('[service_worker] Result: ', result);
+  } catch (error) {
+    console.error(
+      '[service_worker] Something went wrong: ',
+      error instanceof Error ? error.message : 'Unknown reason'
+    );
+  }
 });

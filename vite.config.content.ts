@@ -1,16 +1,22 @@
 import { defineConfig } from 'vite';
 import path from 'path';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  publicDir: false,
   build: {
-    copyPublicDir: false,
-    lib: {
-      entry: path.resolve(__dirname, 'src/content.ts'),
-      formats: ['iife'],
-      name: 'ContentScript',
-      fileName: () => 'content.js',
-    },
-    outDir: 'dist/assets/js',
     emptyOutDir: false,
+    sourcemap: mode === 'development',
+    minify: false,
+    rollupOptions: {
+      input: {
+        content: path.resolve(__dirname, 'src/content.ts'),
+      },
+      output: {
+        entryFileNames: 'assets/js/[name].js',
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        manualChunks: undefined,
+        format: 'iife',
+      },
+    },
   },
-});
+}));
