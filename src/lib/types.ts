@@ -1,36 +1,27 @@
+import { TypedError } from './utils';
+
 export type Message =
   | {
-      action: 'user-select';
+      type: 'user-select';
       payload: {
         tabId: number;
         imageDataUrl: string;
       };
     }
   | {
-      action: 'ocr';
+      type: 'error';
       payload: {
-        imageDataUrl: string;
-        rectangle: Rectangle;
+        error: TypedError | Error | unknown;
       };
     }
   | {
-      action: 'capture';
-      payload: {
-        rectangle: Rectangle;
-        tabId: number;
-      };
+      type: 'translation-result';
+      payload: TranslationResult
     };
 
-export type MessageResponse =
-  | {
-      success: true;
-      type: 'ocr-result';
-      text: string;
-    }
-  | {
-      success: false;
-      type: 'error';
-      error: string;
-    };
+export type TranslationResult = {
+  originalText: string ;
+  translatedText: string ;
+};
 
 export type Rectangle = { x: number; y: number; width: number; height: number };

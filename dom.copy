@@ -254,7 +254,8 @@ function applyEventListenerToOverlay(): Promise<Rectangle> {
             'TimeoutReached',
             `Selection timed out after ${
               SELECTION_TIMEOUT / 60000
-            } minutes of inactivity`
+            } minutes of inactivity`,
+            false
           )
         );
       }
@@ -275,7 +276,9 @@ function applyEventListenerToOverlay(): Promise<Rectangle> {
     const onEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         cleanup();
-        reject(new TypedError('UserEscapeKeyPressed', 'Action canceled'));
+        reject(
+          new TypedError('UserEscapeKeyPressed', 'Action canceled', false)
+        );
         return;
       }
     };
@@ -466,14 +469,12 @@ function getThemeColors() {
     dark: {
       backgroundColor: 'rgba(22, 22, 22, 1)',
       color: 'white',
-      border: '1px solid rgba(255, 255, 255, 0.2)',
-      dividerColor: 'rgba(255, 255, 255, 0.2)',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
     },
     light: {
       backgroundColor: 'rgba(245, 245, 245, 1)',
       color: '#333',
-      border: '1px solid rgba(0, 0, 0, 0.3)',
-      dividerColor: 'rgba(0, 0, 0, 0.1)',
+      border: '1px solid rgba(0, 0, 0, 0.2)',
     },
   };
 
@@ -487,343 +488,271 @@ function getThemeColors() {
 
 function createPopup(text: TranslationResult): HTMLDivElement {
   try {
+    // Create the main container that will host the shadow DOM
+    const container = document.createElement('div');
+    container.classList.add(POPUP_CLASS);
+
+    // Create a shadow root to isolate our styles from the page
+    const shadowRoot = container.attachShadow({ mode: 'closed' });
+
+    // Create the main popup div inside the shadow DOM
     const div = document.createElement('div');
-    div.classList.add(POPUP_CLASS);
 
-    const style = document.createElement('style');
     const theme = getThemeColors();
-    const thumbColor =
-      theme.color === 'white'
-        ? 'rgba(200, 200, 200, 0.5)'
-        : 'rgba(100, 100, 100, 0.5)';
-    const thumbHoverColor =
-      theme.color === 'white'
-        ? 'rgba(200, 200, 200, 0.7)'
-        : 'rgba(100, 100, 100, 0.7)';
 
+    // Add a style element inside the shadow DOM to define all styles
+    const style = document.createElement('style');
     style.textContent = `
-      .${POPUP_CLASS} *::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      .popup-container {
+        width: 40rem;
+        max-width: 50vw;
+        height: auto;
+        max-height: 50vh;
+        box-sizing: border-box;
+        overflow: hidden;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: ${theme.backgroundColor};
+        color: ${theme.color};
+        border: ${theme.border};
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+        padding: 1rem;
+        cursor: default;
+        display: flex;
+        flex-direction: column;
+        opacity: 1;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
-      .${POPUP_CLASS} *::-webkit-scrollbar-track {
-      background: transparent;
+      
+      .popup-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2.5rem;
+        cursor: move;
+        border-bottom: ${theme.border};
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 0.5rem 1rem;
+        display: flex;
+        align-items: center;
       }
-      .${POPUP_CLASS} *::-webkit-scrollbar-thumb {
-      background-color: ${thumbColor};
-      border-radius: 3px;
+      
+      .header-title {
+        font-weight: bold;
+        user-select: none;
       }
-      .${POPUP_CLASS} *::-webkit-scrollbar-thumb:hover {
-      background-color: ${thumbHoverColor};
+      
+      .close-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        border: none;
+        background: transparent;
+        font-size: 1.5rem;
+        color: ${theme.color};
+        cursor: pointer;
       }
-      .${POPUP_CLASS} * {
-      scrollbar-width: thin;
-      scrollbar-color: ${thumbColor} transparent;
+      
+      .content-container {
+        margin-top: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: calc(100% - 5rem);
+        position: relative;
+        user-select: text;
+        overflow: hidden;
       }
-      @media (forced-colors: active) {
-      .${POPUP_CLASS} *::-webkit-scrollbar-thumb {
-        background-color: ButtonText;
+      
+      .text-div {
+        margin: 0.5rem;
+        padding: 1rem;
+        flex: 1;
+        overflow-y: auto;
+        word-break: break-word;
       }
-      .${POPUP_CLASS} * {
-        scrollbar-color: ButtonText transparent;
+      
+      .text-title {
+        margin-bottom: 0.5rem;
       }
+      
+      .divider {
+        width: 1px;
+        align-self: stretch;
+        margin: 0 1rem;
+        background-color: ${theme.border.split(' ')[2]};
+        flex-shrink: 0;
+      }
+      
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem;
+        margin-top: 0.5rem;
+        border-top: ${theme.border};
+      }
+      
+      .btn {
+        padding: 0.25rem 0.5rem;
+        border: ${theme.border};
+        border-radius: 4px;
+        background-color: transparent;
+        color: ${theme.color};
+        cursor: pointer;
+      }
+      
+      .btn:hover {
+        background-color: rgba(0, 0, 0, 0.05);
       }
     `;
 
-    document.head.appendChild(style);
+    shadowRoot.appendChild(style);
 
-    Object.assign(div.style, {
-      width: '30em',
-      maxWidth: '30vw',
-      height: 'auto',
-      maxHeight: '70vh',
-      boxSizing: 'border-box',
-      overflow: 'hidden',
-      zIndex: MAXIMUM_Z_INDEX,
-      position: 'fixed',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      backgroundColor: theme.backgroundColor,
-      color: theme.color,
-      border: theme.border,
-      borderRadius: '8px',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-      transition: 'all 0.3s ease',
-      padding: '1em',
-      cursor: 'default',
-      display: 'flex',
-      flexDirection: 'column',
-      fontFamily: 'Arial, Helvetica, sans-serif',
-      fontSize: '16px',
-    } as CSSStyleDeclaration);
+    div.className = 'popup-container';
 
     // Create a draggable header area
     const header = document.createElement('div');
-    Object.assign(header.style, {
-      position: 'absolute',
-      top: '0',
-      left: '0',
-      right: '0',
-      height: '2.5em',
-      cursor: 'move',
-      borderBottom: theme.border,
-      borderTopLeftRadius: '8px',
-      borderTopRightRadius: '8px',
-      padding: '0.5em 1em',
-      display: 'flex',
-      alignItems: 'center',
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      backgroundColor: theme.backgroundColor,
-    } as CSSStyleDeclaration);
-
-    const closeButton = document.createElement('button');
-    closeButton.innerText = '×';
-    Object.assign(closeButton.style, {
-      border: 'none',
-      background: 'transparent',
-      fontSize: '1.7em',
-      color: theme.color,
-      cursor: 'pointer',
-      padding: '0',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    });
-
-    const closeButtonWrapper = document.createElement('div');
-    Object.assign(closeButtonWrapper.style, {
-      padding: '5px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-    });
-    closeButtonWrapper.appendChild(closeButton);
+    header.className = 'popup-header';
 
     const headerTitle = document.createElement('span');
     headerTitle.textContent = 'Translation';
-    Object.assign(headerTitle.style, {
-      fontWeight: 'bold',
-      userSelect: 'none',
-      fontFamily: 'inherit',
-      fontSize: '1em',
-      color: theme.color,
-    } as CSSStyleDeclaration);
-
+    headerTitle.className = 'header-title';
     header.appendChild(headerTitle);
-    header.appendChild(closeButtonWrapper);
+
+    // Add close button early so we can reference it in event handlers
+    const closeButton = document.createElement('button');
+    closeButton.innerText = '×';
+    closeButton.className = 'close-button';
 
     // Make the header draggable
     let isDragging = false;
     let offsetX = 0;
     let offsetY = 0;
 
-    const handleMouseDown = (e: MouseEvent) => {
+    // Attach the mousedown event to the header
+    header.addEventListener('mousedown', (e) => {
+      // Ensure we're not clicking a button
       if (
         e.target === closeButton ||
         (e.target as Element).tagName === 'BUTTON'
-      )
+      ) {
         return;
+      }
 
       isDragging = true;
-      const rect = div.getBoundingClientRect();
+
+      // Get position relative to viewport, not the container
+      const rect = container.getBoundingClientRect();
       offsetX = e.clientX - rect.left;
       offsetY = e.clientY - rect.top;
 
-      div.style.transition = 'none'; // Disable transition during drag
-    };
+      // Disable transition for smoother dragging
+      container.style.transition = 'none';
 
-    const handleMouseMove = (e: MouseEvent) => {
+      // Prevent text selection during drag
+      e.preventDefault();
+    });
+
+    // These handlers need to be on document to catch all mouse movements
+    const mouseMoveHandler = (e: MouseEvent) => {
       if (!isDragging) return;
 
-      div.style.left = `${e.clientX - offsetX}px`;
-      div.style.top = `${e.clientY - offsetY}px`;
-      div.style.transform = 'none'; // emove translate(-50%, -50%)
+      // Set absolute position based on mouse position and initial offset
+      container.style.left = `${e.clientX - offsetX}px`;
+      container.style.top = `${e.clientY - offsetY}px`;
+
+      // Important: Remove the transform that centers the popup
+      container.style.transform = 'none';
     };
 
-    const handleMouseUp = () => {
-      isDragging = false;
-      div.style.transition = 'all 0.3s ease'; // Restore transition
+    const mouseUpHandler = () => {
+      if (isDragging) {
+        isDragging = false;
+        container.style.transition = 'all 0.3s ease';
+      }
     };
 
-    header.addEventListener('mousedown', handleMouseDown);
-    div.addEventListener('mousemove', handleMouseMove);
-    div.addEventListener('mouseup', handleMouseUp);
+    // Add the document level handlers
+    document.addEventListener('mousemove', mouseMoveHandler);
+    document.addEventListener('mouseup', mouseUpHandler);
 
     const contentContainer = document.createElement('div');
-    Object.assign(contentContainer.style, {
-      margin: '3em 0px',
-      display: 'flex',
-      flexDirection: 'column',
-      width: '100%',
-      height: 'auto',
-      position: 'relative',
-      userSelect: 'text',
-      overflowX: 'hidden',
-      overflowY: 'auto',
-    } as CSSStyleDeclaration);
+    contentContainer.className = 'content-container';
 
     const originalDiv = document.createElement('div');
-    Object.assign(originalDiv.style, {
-      margin: '0.5em 0px',
-      flex: '1',
-    } as CSSStyleDeclaration);
+    originalDiv.className = 'text-div';
 
     const originalTitle = document.createElement('h3');
     originalTitle.innerText = 'Original Text';
-    Object.assign(originalTitle.style, {
-      marginBottom: '0.5em',
-      fontSize: '0.8em',
-      color: theme.color,
-      fontWeight: 'bold',
-      userSelect: 'none',
-      alignSelf: 'center',
-      width: '100%',
-    } as CSSStyleDeclaration);
+    originalTitle.className = 'text-title';
 
     const p1 = document.createElement('p');
     p1.innerText = text.originalText;
-    p1.style.color = theme.color;
-    p1.style.fontFamily = 'inherit';
-    p1.style.fontSize = '0.8em';
     p1.classList.add('original-text-content');
 
-    const p1Container = document.createElement('div');
-    p1Container.style.overflowY = 'auto';
-    p1Container.style.padding = '0.5em';
-    p1Container.style.height = '75px';
-    p1Container.style.wordBreak = 'break-word';
-
-    p1Container.appendChild(p1);
     originalDiv.appendChild(originalTitle);
-    originalDiv.appendChild(p1Container);
+    originalDiv.appendChild(p1);
 
+    // Center divider
     const divider = document.createElement('div');
-    Object.assign(divider.style, {
-      width: '80%',
-      height: '0.5px',
-      margin: '0.5em auto',
-      backgroundColor: theme.dividerColor,
-      flexShrink: '0',
-      alignSelf: 'center',
-      opacity: '0.8',
-    } as CSSStyleDeclaration);
+    divider.className = 'divider';
 
     const translatedDiv = document.createElement('div');
-    Object.assign(translatedDiv.style, {
-      margin: '0.5em 0px',
-      flex: '1',
-    } as CSSStyleDeclaration);
+    translatedDiv.className = 'text-div';
 
     const translatedTitle = document.createElement('h3');
     translatedTitle.innerText = 'Translated Text';
-    Object.assign(translatedTitle.style, {
-      marginBottom: '0.5em',
-      fontSize: '0.8em',
-      color: theme.color,
-      fontWeight: 'bold',
-      userSelect: 'none',
-      margin: 'auto',
-    } as CSSStyleDeclaration);
+    translatedTitle.className = 'text-title';
 
     const p2 = document.createElement('p');
     p2.innerText = text.translatedText;
-    p2.style.color = theme.color;
-    p2.style.fontFamily = 'inherit';
-    p2.style.fontSize = '0.8em';
-    p2.classList.add('original-text-content');
+    p2.classList.add('translated-text-content');
 
-    const p2Container = document.createElement('div');
-    p2Container.style.overflowY = 'auto';
-    p2Container.style.padding = '0.5em';
-    p2Container.style.height = '75px';
-    p2Container.style.wordBreak = 'break-word';
-
-    p2Container.appendChild(p2);
     translatedDiv.appendChild(translatedTitle);
-    translatedDiv.appendChild(p2Container);
+    translatedDiv.appendChild(p2);
 
     const footer = document.createElement('div');
-    Object.assign(footer.style, {
-      position: 'absolute',
-      bottom: '0',
-      left: '0',
-      right: '0',
-      height: '3em',
-      display: 'flex',
-      justifyContent: 'space-between',
-      padding: '0.5em 0.8em',
-      borderTop: theme.border,
-      backgroundColor: theme.backgroundColor,
-      alignItems: 'center',
-    } as CSSStyleDeclaration);
+    footer.className = 'footer';
 
     const createButton = (text: string, onClick: () => void) => {
       const button = document.createElement('button');
       button.innerText = text;
-      Object.assign(button.style, {
-        padding: '0.25em 0.5em',
-        border: theme.border,
-        borderRadius: '4px',
-        backgroundColor: 'transparent',
-        color: theme.color,
-        cursor: 'pointer',
-        fontSize: 'clamp(0.5em, 1.5vw, 0.9em)',
-        maxHeight: '2em',
-      } as CSSStyleDeclaration);
+      button.className = 'btn';
       button.addEventListener('click', onClick);
       return button;
     };
 
-    const createCopyButton = (text: string, contentToClone: string) => {
-      const button = createButton(text, () => {
-        navigator.clipboard.writeText(contentToClone);
-        const originalWidth = button.offsetWidth;
-        const originalText = button.innerText;
+    const copyOriginalBtn = createButton('Copy Original', () => {
+      navigator.clipboard.writeText(text.originalText);
+    });
 
-        button.style.width = `${originalWidth}px`;
-        button.innerText = '✓ Copied!';
-
-        setTimeout(() => {
-          button.innerText = originalText;
-          button.style.width = '';
-        }, 2000);
-      });
-      return button;
-    };
-
-    const copyOriginalBtn = createCopyButton(
-      'Copy Original',
-      text.originalText
-    );
-    const copyTranslatedBtn = createCopyButton(
-      'Copy Translation',
-      text.translatedText
-    );
+    const copyTranslatedBtn = createButton('Copy Translation', () => {
+      navigator.clipboard.writeText(text.translatedText);
+    });
 
     footer.appendChild(copyOriginalBtn);
     footer.appendChild(copyTranslatedBtn);
 
     closeButton.onclick = () => {
-      // Clean up style element
-      if (document.head.contains(style)) {
-        document.head.removeChild(style);
-      }
-
+      // Remove document event listeners to prevent memory leaks
+      document.removeEventListener('mousemove', mouseMoveHandler);
+      document.removeEventListener('mouseup', mouseUpHandler);
+      
       // Animate out
-      div.style.opacity = '0';
-      div.style.transform = 'translate(-50%, -50%) scale(0.95)';
-
+      container.style.opacity = '0';
+      container.style.transform = 'translate(-50%, -50%) scale(0.95)';
+      
       // Remove after animation
       setTimeout(() => {
-        if (document.body.contains(div)) {
-          document.body.removeChild(div);
-        }
-
-        if (document.head.contains(style)) {
-          document.head.removeChild(style);
+        if (document.body.contains(container)) {
+          document.body.removeChild(container);
         }
       }, 300);
     };
@@ -833,10 +762,24 @@ function createPopup(text: TranslationResult): HTMLDivElement {
     contentContainer.appendChild(translatedDiv);
 
     div.appendChild(header);
+    div.appendChild(closeButton);
     div.appendChild(contentContainer);
     div.appendChild(footer);
 
-    return div;
+    shadowRoot.appendChild(div);
+
+    // Set essential styles on the container that need to be outside the shadow DOM
+    Object.assign(container.style, {
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: MAXIMUM_Z_INDEX,
+      width: '40rem',
+      maxWidth: '50vw',
+    });
+
+    return container;
   } catch (error) {
     throw new TypedError(
       'DOMPopupError',

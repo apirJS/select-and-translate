@@ -1,14 +1,17 @@
 import * as browser from 'webextension-polyfill';
-import { Message } from './lib/types';
-import { NamedError } from './lib/utils';
+import { Message, TranslationResult } from './lib/types';
+import { isError, TypedError } from './lib/utils';
 console.log('[service_worker] Background script loaded');
 
-async function requestTranslation(imageDataUrl: string): Promise<string> {
+async function requestTranslation(
+  imageDataUrl: string,
+  fromLang: string = 'auto',
+  toLang: string = 'indonesia'
+): Promise<TranslationResult> {
   try {
     const base64Image = imageDataUrl.replace(/^data:image\/[a-z]+;base64,/, '');
-
     const response = await fetch(
-      'https://translate.apir.live/api/translate?from=auto&to=indonesia',
+      `https://translate.apir.live/api/translate?from=${fromLang}&to=${toLang}`,
       {
         method: 'POST',
         headers: {
@@ -21,33 +24,27 @@ async function requestTranslation(imageDataUrl: string): Promise<string> {
     );
 
     if (!response.ok) {
-      throw new NamedError(
+      throw new TypedError(
         'FetchError',
         `HTTP error! Status: ${response.status}`
       );
     }
 
-    const result = await response.json();
-    
+    const result: TranslationResult = await response.json();
+    if (!result.originalText || !result.translatedText) {
+      throw new TypedError(
+        'TranslationError',
+        'Translation failed: there is no text on the image'
+      );
+    }
+
     return result;
   } catch (error) {
-    throw new NamedError(
-      'FetchError',
-      `Failed to request translation: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
+    throw error;
   }
 }
 
-browser.commands.onCommand.addListener(async (command) => {
-  if (browser.runtime.lastError) {
-    console.error('Something went wrong:', browser.runtime.lastError.message);
-    return;
-  }
-
-  console.log('[service_worker] Command received:', command);
-
+browser.commands.onCommand.addListener(async () => {
   try {
     const [tab] = await browser.tabs.query({
       active: true,
@@ -55,47 +52,88 @@ browser.commands.onCommand.addListener(async (command) => {
     });
 
     if (!tab) {
-      console.error('[service_worker] No active tab found.');
-      return;
+      throw new TypedError('TabQueryError', 'No active tab found.');
     }
 
     const tabId = tab.id;
     if (!tabId) {
-      console.error('[service_worker] Failed to retrieve tab ID.');
-      return;
+      throw new TypedError('TabQueryError', 'Failed to retrieve tab ID.');
     }
 
-    await browser.scripting.executeScript({
-      target: { tabId: tabId },
-      files: ['/assets/js/content.js'],
-    });
+    try {
+      await browser.tabs.sendMessage(tabId, { type: 'ping' });
+    } catch (error) {
+      await browser.scripting.executeScript({
+        target: { tabId: tabId },
+        files: ['/assets/js/content.js'],
+        injectImmediately: true,
+      });
+    }
 
     const imageDataUrl = await browser.tabs.captureVisibleTab(undefined, {
       format: 'png',
     });
-    const croppedImageDataUrl: string = await browser.tabs.sendMessage(tabId, {
-      action: 'user-select',
+    const selectionResult: unknown = await browser.tabs.sendMessage(tabId, {
+      type: 'user-select',
       payload: {
         tabId,
         imageDataUrl,
       },
     } as Message);
 
-    if (!croppedImageDataUrl) {
-      console.error(
-        '[service_worker] No image data received from content script'
-      );
+    if (isError(selectionResult) || typeof selectionResult !== 'string') {
+      throw selectionResult;
+    }
+
+    const translationResult = await requestTranslation(selectionResult);
+    await browser.tabs.sendMessage(tabId, {
+      type: 'translation-result',
+      payload: translationResult,
+    } as Message);
+  } catch (error) {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'errorType' in error &&
+      (error.errorType === 'TimeoutReached' ||
+        error.errorType === 'UserEscapeKeyPressed')
+    ) {
       return;
     }
 
-    console.log('[service_worker] Cropped Image: ', croppedImageDataUrl);
-
-    const result = await requestTranslation(croppedImageDataUrl);
-    console.log('[service_worker] Result: ', result);
-  } catch (error) {
-    console.error(
-      '[service_worker] Something went wrong: ',
-      error instanceof Error ? error.message : 'Unknown reason'
-    );
+    if (error instanceof TypedError) {
+      await reportError(error, error.errorType);
+    } else {
+      await reportError(error);
+    }
   }
 });
+
+async function reportError(error: unknown, title = 'Extension Error') {
+  let message: string;
+
+  if (error instanceof Error) {
+    message = error.message;
+  } else if (typeof error === 'object' && error !== null) {
+    try {
+      if ('errorType' in error && typeof error.errorType === 'string') {
+        const errorMessage =
+          'message' in error ? error.message : 'Unknown error';
+        message = `${error.errorType}: ${errorMessage}`;
+      } else {
+        message = JSON.stringify(error, null, 2);
+      }
+    } catch {
+      message = 'An error occurred';
+    }
+  } else {
+    message = String(error);
+  }
+
+  await browser.notifications.create({
+    type: 'basic',
+    iconUrl: '/assets/img/icon.png',
+    title,
+    message,
+  });
+}
