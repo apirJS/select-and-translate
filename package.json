@@ -9,19 +9,15 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.313",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.14.1",
-    "@types/pica": "^9.0.5",
     "@types/webextension-polyfill": "^0.12.3",
-    "@vitejs/plugin-react": "^4.3.4",
     "fs-extra": "^11.3.0",
     "typescript": "~5.7.2",
     "vite": "^6.2.0",
     "vite-plugin-static-copy": "^2.3.1"
   },
   "dependencies": {
-    "pica": "^9.0.1",
     "webextension-polyfill": "^0.12.0"
   }
 }
