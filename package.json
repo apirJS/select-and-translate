@@ -1,7 +1,7 @@
 {
   "name": "select-and-translate",
-  "version": "0.0.0",
-  "description": "Select area on your screen and translate it!",
+  "version": "0.0.6",
+  "description": "Browser extension that translates text from any part of a webpage by selecting the area with your cursor",
   "type": "module",
   "scripts": {
     "dev": "vite",

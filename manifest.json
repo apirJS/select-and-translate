@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/chrome-manifest.json",
   "manifest_version": 3,
   "name": "select and translate",
-  "version": "0.0.1",
-  "description": "Select area on your screen and translate it!",
+  "version": "0.0.6",
+  "description": "Browser extension that translates text from any part of a webpage by selecting the area with your cursor",
   "background": {
     "service_worker": "assets/js/background.js",
     "type": "module"
