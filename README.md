@@ -68,7 +68,6 @@ This extension uses:
 ### No text detected in the image
 - Make sure the selected area contains clear, readable text
 - Increase the selection size to include complete text blocks
-- Avoid selecting areas with complex backgrounds or low contrast
 
 ### Translation doesn't appear
 - Check your internet connection, as translation requires API access
