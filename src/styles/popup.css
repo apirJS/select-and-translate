@@ -155,3 +155,58 @@ select:focus {
   margin-bottom: 16px;
   padding: 0 10px;
 }
+
+/* GitHub and Donate buttons */
+.links-section {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  gap: 10px;
+}
+
+.link-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.github-button {
+  background-color: #24292e;
+  color: white;
+}
+
+.donate-button {
+  background-color: #ff5e5b;
+  color: white;
+}
+
+.link-button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.link-button:active {
+  transform: translateY(1px);
+}
+
+.github-icon, .donate-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Add media query to handle very small screens */
+@media (max-width: 280px) {
+  .links-section {
+    flex-direction: column;
+  }
+}

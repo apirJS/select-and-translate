@@ -48,4 +48,25 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('Failed to open shortcuts page:', err);
     }
   });
+
+  const githubBtn = document.getElementById('github-btn');
+  const donateBtn = document.getElementById('donate-btn');
+
+  githubBtn?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    try {
+      await browser.tabs.create({ url: 'https://github.com/apirJS' });
+    } catch (err) {
+      console.error('Failed to open GitHub link:', err);
+    }
+  });
+
+  donateBtn?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    try {
+      await browser.tabs.create({ url: 'https://saweria.co/aprApr' });
+    } catch (err) {
+      console.error('Failed to open donation link:', err);
+    }
+  });
 });
