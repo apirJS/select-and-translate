@@ -101,4 +101,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Built with the WebExtension API
 - Uses Gemini API for text translation
-- Made with ❤️ by Echa
+- Made with ❤️ by Echa (apir)
