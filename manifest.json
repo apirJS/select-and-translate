@@ -29,12 +29,20 @@
     "128": "assets/img/icon-128.png",
     "256": "assets/img/icon-256.png"
   },
-  "permissions": ["scripting", "tabs", "activeTab", "notifications"],
+  "permissions": ["scripting", "tabs", "activeTab", "notifications", "storage"],
   "host_permissions": ["<all_urls>"],
   "commands": {
-    "scan": {
+    "_execute_action": {
       "suggested_key": {
-        "default": "Ctrl+Shift+Y"
+        "default": "Ctrl+Shift+Space",
+        "mac": "Ctrl+Shift+Space"
+      },
+      "description": "Select and Translate"
+    },
+    "select_and_translate": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Space",
+        "mac": "Ctrl+Shift+Space"
       },
       "description": "Select and Translate"
     }

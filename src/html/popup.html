@@ -6,7 +6,67 @@
     <link rel="stylesheet" href="../styles/popup.css" />
   </head>
   <body>
-    <h1>Hello</h1>
-    <script type="module" src="../popup.ts"></script>
+    <main>
+      <h3>Select and Translate</h3>
+      <div class="language-selector">
+        <label for="lang">Target language:</label>
+        <select name="select" id="lang">
+          <option value="Indonesia" selected>Indonesia (id)</option>
+          <option value="Arabic">Arabic (ar)</option>
+          <option value="Bengali">Bengali (bn)</option>
+          <option value="Bulgarian">Bulgarian (bg)</option>
+          <option value="Chinese">Chinese (zh)</option>
+          <option value="Croatian">Croatian (hr)</option>
+          <option value="Czech">Czech (cs)</option>
+          <option value="Danish">Danish (da)</option>
+          <option value="Dutch">Dutch (nl)</option>
+          <option value="English">English (en)</option>
+          <option value="Estonian">Estonian (et)</option>
+          <option value="Finnish">Finnish (fi)</option>
+          <option value="French">French (fr)</option>
+          <option value="German">German (de)</option>
+          <option value="Greek">Greek (el)</option>
+          <option value="Hebrew">Hebrew (he)</option>
+          <option value="Hindi">Hindi (hi)</option>
+          <option value="Hungarian">Hungarian (hu)</option>
+          <option value="Italian">Italian (it)</option>
+          <option value="Japanese">Japanese (ja)</option>
+          <option value="Korean">Korean (ko)</option>
+          <option value="Latvian">Latvian (lv)</option>
+          <option value="Lithuanian">Lithuanian (lt)</option>
+          <option value="Norwegian">Norwegian (no)</option>
+          <option value="Polish">Polish (pl)</option>
+          <option value="Portuguese">Portuguese (pt)</option>
+          <option value="Romanian">Romanian (ro)</option>
+          <option value="Russian">Russian (ru)</option>
+          <option value="Serbian">Serbian (sr)</option>
+          <option value="Slovak">Slovak (sk)</option>
+          <option value="Slovenian">Slovenian (sl)</option>
+          <option value="Spanish">Spanish (es)</option>
+          <option value="Swahili">Swahili (sw)</option>
+          <option value="Swedish">Swedish (sv)</option>
+          <option value="Thai">Thai (th)</option>
+          <option value="Turkish">Turkish (tr)</option>
+          <option value="Ukrainian">Ukrainian (uk)</option>
+          <option value="Vietnamese">Vietnamese (vi)</option>
+        </select>
+      </div>
+      <div class="run-section">
+        <button
+          id="run-btn"
+          class="run-button"
+          title="Run Select and Translate"
+        >
+          <span class="play-icon"></span>
+          <span>Translate</span>
+        </button>
+      </div>
+      <div class="shortcut-section">
+        <button id="shortcuts-btn" class="settings-button">
+          Change Shortcut
+        </button>
+      </div>
+    </main>
+    <script type="module" defer src="../popup.ts"></script>
   </body>
 </html>

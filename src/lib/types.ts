@@ -16,12 +16,14 @@ export type Message =
     }
   | {
       type: 'translation-result';
-      payload: TranslationResult
-    };
+      payload: TranslationResult;
+    }
+  | { type: 'ping' }
+  | { type: 'run-translation' };
 
 export type TranslationResult = {
-  originalText: string ;
-  translatedText: string ;
+  originalText: string;
+  translatedText: string;
 };
 
 export type Rectangle = { x: number; y: number; width: number; height: number };

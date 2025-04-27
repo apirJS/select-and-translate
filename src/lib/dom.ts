@@ -6,6 +6,9 @@ const CANVAS_ID = 'select-and-translate-canvas';
 const POPUP_CLASS = 'select-and-translate-popup';
 const MAXIMUM_Z_INDEX = '2147483647';
 const SELECTION_TIMEOUT = 120000;
+const TOAST_ID = 'select-and-translate-toast';
+const TOAST_ANIMATION_DURATION_MS = 300; // ms
+
 const ORIGINAL_STYLES = {
   html: {
     overflow: '',
@@ -16,6 +19,136 @@ const ORIGINAL_STYLES = {
     marginRight: '',
   },
 };
+
+function showLoadingToast(): HTMLDivElement {
+  const existingToast = document.getElementById(TOAST_ID);
+  if (existingToast && document.body.contains(existingToast)) {
+    document.body.removeChild(existingToast);
+  }
+
+  const toast = document.createElement('div');
+  toast.id = TOAST_ID;
+
+  Object.assign(toast.style, {
+    position: 'fixed',
+    top: '20px',
+    left: '20px',
+    backgroundColor: 'rgba(40, 40, 40, 0.9)',
+    color: 'white',
+    padding: '12px 20px',
+    borderRadius: '6px',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+    zIndex: MAXIMUM_Z_INDEX,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+    fontSize: '14px',
+    transform: 'translateY(-100px)',
+    opacity: '0',
+    transition: 'transform 300ms ease-out, opacity 300ms ease-out',
+    pointerEvents: 'none',
+  } as CSSStyleDeclaration);
+
+  const spinner = document.createElement('div');
+  spinner.className = 'spinner';
+
+  const spinnerStyle = document.createElement('style');
+  spinnerStyle.textContent = `
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #${TOAST_ID} .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s linear infinite;
+    }
+  `;
+  document.head.appendChild(spinnerStyle);
+
+  const message = document.createElement('span');
+  message.textContent = 'Processing selection...';
+
+  toast.appendChild(spinner);
+  toast.appendChild(message);
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.transform = 'translateY(0)';
+    toast.style.opacity = '1';
+  }, 10);
+
+  // Add a 2-minute timeout to automatically hide the toast
+  const timeoutId = setTimeout(() => {
+    hideLoadingToast('failed');
+  }, 2 * 60 * 1000); // 2 minutes in milliseconds
+
+  // Store the timeout ID on the toast element to clear it if needed
+  toast.dataset.timeoutId = timeoutId.toString();
+
+  return toast;
+}
+
+export function hideLoadingToast(success: string): Promise<void> {
+  return new Promise((resolve) => {
+    const toast = document.getElementById(TOAST_ID);
+
+    if (!toast || !document.body.contains(toast)) {
+      resolve();
+      return;
+    }
+
+    if (toast.dataset.timeoutId) {
+      clearTimeout(parseInt(toast.dataset.timeoutId, 10));
+      delete toast.dataset.timeoutId;
+    }
+
+    const messageElement = toast.querySelector('span');
+    if (messageElement) {
+      messageElement.textContent =
+        success === 'success' ? 'Success!' : 'Failed :(';
+
+      const spinner = toast.querySelector('.spinner') as HTMLElement;
+      if (spinner) {
+        spinner.className = '';
+        spinner.textContent = success === 'success' ? '✓' : '✗';
+        Object.assign(spinner.style, {
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '16px',
+          height: '16px',
+          borderRadius: '50%',
+          backgroundColor:
+            success === 'success'
+              ? 'rgba(0, 200, 83, 0.8)'
+              : 'rgba(255, 76, 76, 0.8)',
+          fontSize: '12px',
+          fontWeight: 'bold',
+        });
+      }
+    }
+
+    toast.style.transform = 'translateY(-100px)';
+    toast.style.opacity = '0';
+
+    setTimeout(() => {
+      if (document.body.contains(toast)) {
+        document.body.removeChild(toast);
+      }
+      if (document.head.querySelector(`style[data-for="${TOAST_ID}"]`)) {
+        document.head.removeChild(
+          document.head.querySelector(`style[data-for="${TOAST_ID}"]`)!
+        );
+      }
+      resolve();
+    }, TOAST_ANIMATION_DURATION_MS);
+  });
+}
 
 function hideScrollbars() {
   // Save original styles
@@ -32,7 +165,6 @@ function hideScrollbars() {
   document.documentElement.style.overflow = 'hidden';
   document.documentElement.style.scrollbarWidth = 'none'; // For Firefox
 
-  // Hide scrollbars on BODY and compensate for scrollbar width
   document.body.style.overflow = 'hidden';
   document.body.style.marginRight = `${scrollbarWidth}px`;
 }
@@ -136,7 +268,6 @@ export async function selectAndCropImage(
 ): Promise<HTMLCanvasElement> {
   try {
     const [canvas, ctx] = await loadImageOntoCanvas(imageDataUrl);
-
     appendOverlayToViewport();
 
     const rectangle = await applyEventListenerToOverlay();
@@ -150,7 +281,9 @@ export async function selectAndCropImage(
       height: rectangle.height * scaleY,
     };
 
-    return await cropCanvas(canvas, scaledRectangle);
+    const result = await cropCanvas(canvas, scaledRectangle);
+
+    return result;
   } catch (error) {
     existingCanvasAndOverlayCleanup();
     throw error;
@@ -355,8 +488,9 @@ function applyEventListenerToOverlay(): Promise<Rectangle> {
               height: rect.height,
             };
 
-            cleanup();
+            showLoadingToast();
 
+            cleanup();
             resolve(rectangle);
           } catch (error) {
             cleanup();
@@ -477,7 +611,6 @@ function getThemeColors() {
     },
   };
 
-  // Determine preferred theme based on system preference
   const prefersDarkTheme = window.matchMedia(
     '(prefers-color-scheme: dark)'
   ).matches;
@@ -502,6 +635,12 @@ function createPopup(text: TranslationResult): HTMLDivElement {
         : 'rgba(100, 100, 100, 0.7)';
 
     style.textContent = `
+      .${POPUP_CLASS}, 
+      .${POPUP_CLASS} * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
       .${POPUP_CLASS} *::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -533,10 +672,10 @@ function createPopup(text: TranslationResult): HTMLDivElement {
     document.head.appendChild(style);
 
     Object.assign(div.style, {
-      width: '30em',
-      maxWidth: '30vw',
+      width: '400px',
+      maxWidth: '90vw',
       height: 'auto',
-      maxHeight: '70vh',
+      maxHeight: '80vh',
       boxSizing: 'border-box',
       overflow: 'hidden',
       zIndex: MAXIMUM_Z_INDEX,
@@ -550,43 +689,45 @@ function createPopup(text: TranslationResult): HTMLDivElement {
       borderRadius: '8px',
       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
       transition: 'all 0.3s ease',
-      padding: '1em',
+      padding: '0',
+      margin: '0',
       cursor: 'default',
       display: 'flex',
       flexDirection: 'column',
-      fontFamily: 'Arial, Helvetica, sans-serif',
+      fontFamily:
+        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif, Arial, Helvetica",
       fontSize: '16px',
+      pointerEvents: 'auto', // Ensure clicks are captured by the popup
     } as CSSStyleDeclaration);
 
     // Create a draggable header area
     const header = document.createElement('div');
     Object.assign(header.style, {
-      position: 'absolute',
-      top: '0',
-      left: '0',
-      right: '0',
-      height: '2.5em',
+      margin: '0',
+      padding: '0 1em',
+      minHeight: '45px',
       cursor: 'move',
       borderBottom: theme.border,
       borderTopLeftRadius: '8px',
       borderTopRightRadius: '8px',
-      padding: '0.5em 1em',
       display: 'flex',
       alignItems: 'center',
       flexDirection: 'row',
       justifyContent: 'space-between',
       backgroundColor: theme.backgroundColor,
+      flexShrink: '0',
     } as CSSStyleDeclaration);
 
     const closeButton = document.createElement('button');
     closeButton.innerText = '×';
     Object.assign(closeButton.style, {
+      margin: '0',
+      padding: '0',
       border: 'none',
       background: 'transparent',
-      fontSize: '1.7em',
+      fontSize: '24px',
       color: theme.color,
       cursor: 'pointer',
-      padding: '0',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -594,26 +735,39 @@ function createPopup(text: TranslationResult): HTMLDivElement {
 
     const closeButtonWrapper = document.createElement('div');
     Object.assign(closeButtonWrapper.style, {
+      margin: '0',
       padding: '5px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       cursor: 'pointer',
-    });
+      userSelect: 'none',
+    } as CSSStyleDeclaration);
     closeButtonWrapper.appendChild(closeButton);
 
     const headerTitle = document.createElement('span');
     headerTitle.textContent = 'Translation';
     Object.assign(headerTitle.style, {
+      margin: '0',
+      padding: '0',
       fontWeight: 'bold',
       userSelect: 'none',
       fontFamily: 'inherit',
-      fontSize: '1em',
+      fontSize: '16px',
       color: theme.color,
     } as CSSStyleDeclaration);
 
     header.appendChild(headerTitle);
     header.appendChild(closeButtonWrapper);
+
+    // Prevent event propagation
+    div.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    div.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+    });
 
     // Make the header draggable
     let isDragging = false;
@@ -633,6 +787,7 @@ function createPopup(text: TranslationResult): HTMLDivElement {
       offsetY = e.clientY - rect.top;
 
       div.style.transition = 'none'; // Disable transition during drag
+      e.stopPropagation();
     };
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -640,21 +795,25 @@ function createPopup(text: TranslationResult): HTMLDivElement {
 
       div.style.left = `${e.clientX - offsetX}px`;
       div.style.top = `${e.clientY - offsetY}px`;
-      div.style.transform = 'none'; // emove translate(-50%, -50%)
+      div.style.transform = 'none'; // Remove translate(-50%, -50%)
+      e.stopPropagation();
+      e.preventDefault(); // Prevent default browser behavior
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
       isDragging = false;
       div.style.transition = 'all 0.3s ease'; // Restore transition
+      e.stopPropagation();
     };
 
     header.addEventListener('mousedown', handleMouseDown);
-    div.addEventListener('mousemove', handleMouseMove);
-    div.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
 
     const contentContainer = document.createElement('div');
     Object.assign(contentContainer.style, {
-      margin: '3em 0px',
+      margin: '0',
+      padding: '1em',
       display: 'flex',
       flexDirection: 'column',
       width: '100%',
@@ -663,38 +822,60 @@ function createPopup(text: TranslationResult): HTMLDivElement {
       userSelect: 'text',
       overflowX: 'hidden',
       overflowY: 'auto',
+      flexGrow: '1',
+      boxSizing: 'border-box',
     } as CSSStyleDeclaration);
 
     const originalDiv = document.createElement('div');
     Object.assign(originalDiv.style, {
-      margin: '0.5em 0px',
+      margin: '0.5em 0',
+      padding: '0',
       flex: '1',
     } as CSSStyleDeclaration);
 
     const originalTitle = document.createElement('h3');
     originalTitle.innerText = 'Original Text';
     Object.assign(originalTitle.style, {
-      marginBottom: '0.5em',
-      fontSize: '0.8em',
+      margin: '0',
+      padding: '0',
+      marginBottom: '8px',
+      fontSize: '14px',
       color: theme.color,
       fontWeight: 'bold',
       userSelect: 'none',
       alignSelf: 'center',
       width: '100%',
+      height: 'auto',
+      minHeight: 'fit-content',
+      lineHeight: '1.4',
     } as CSSStyleDeclaration);
 
     const p1 = document.createElement('p');
     p1.innerText = text.originalText;
-    p1.style.color = theme.color;
-    p1.style.fontFamily = 'inherit';
-    p1.style.fontSize = '0.8em';
+    Object.assign(p1.style, {
+      margin: '0',
+      padding: '0',
+      color: theme.color,
+      fontFamily: 'inherit',
+      fontSize: '14px',
+      lineHeight: '1.5',
+      fontWeight: 'normal',
+      wordBreak: 'break-word',
+      userSelect: 'text',
+      cursor: 'text',
+    });
     p1.classList.add('original-text-content');
 
     const p1Container = document.createElement('div');
-    p1Container.style.overflowY = 'auto';
-    p1Container.style.padding = '0.5em';
-    p1Container.style.height = '75px';
-    p1Container.style.wordBreak = 'break-word';
+    Object.assign(p1Container.style, {
+      margin: '0',
+      padding: '10px',
+      overflowY: 'auto',
+      maxHeight: '120px',
+      wordBreak: 'break-word',
+      border: theme.border,
+      borderRadius: '4px',
+    });
 
     p1Container.appendChild(p1);
     originalDiv.appendChild(originalTitle);
@@ -702,9 +883,10 @@ function createPopup(text: TranslationResult): HTMLDivElement {
 
     const divider = document.createElement('div');
     Object.assign(divider.style, {
-      width: '80%',
-      height: '0.5px',
-      margin: '0.5em auto',
+      margin: '15px auto',
+      padding: '0',
+      width: '90%',
+      height: '1px',
       backgroundColor: theme.dividerColor,
       flexShrink: '0',
       alignSelf: 'center',
@@ -713,33 +895,53 @@ function createPopup(text: TranslationResult): HTMLDivElement {
 
     const translatedDiv = document.createElement('div');
     Object.assign(translatedDiv.style, {
-      margin: '0.5em 0px',
+      margin: '0.5em 0',
+      padding: '0',
       flex: '1',
     } as CSSStyleDeclaration);
 
     const translatedTitle = document.createElement('h3');
     translatedTitle.innerText = 'Translated Text';
     Object.assign(translatedTitle.style, {
-      marginBottom: '0.5em',
-      fontSize: '0.8em',
+      margin: '0',
+      padding: '0',
+      marginBottom: '8px',
+      fontSize: '14px',
       color: theme.color,
       fontWeight: 'bold',
       userSelect: 'none',
-      margin: 'auto',
+      width: '100%',
+      height: 'auto',
+      minHeight: 'fit-content',
+      lineHeight: '1.4',
     } as CSSStyleDeclaration);
 
     const p2 = document.createElement('p');
     p2.innerText = text.translatedText;
-    p2.style.color = theme.color;
-    p2.style.fontFamily = 'inherit';
-    p2.style.fontSize = '0.8em';
-    p2.classList.add('original-text-content');
+    Object.assign(p2.style, {
+      margin: '0',
+      padding: '0',
+      color: theme.color,
+      fontFamily: 'inherit',
+      fontSize: '14px',
+      lineHeight: '1.5',
+      fontWeight: 'normal',
+      wordBreak: 'break-word',
+      userSelect: 'text',
+      cursor: 'text',
+    });
+    p2.classList.add('translated-text-content');
 
     const p2Container = document.createElement('div');
-    p2Container.style.overflowY = 'auto';
-    p2Container.style.padding = '0.5em';
-    p2Container.style.height = '75px';
-    p2Container.style.wordBreak = 'break-word';
+    Object.assign(p2Container.style, {
+      margin: '0',
+      padding: '10px',
+      overflowY: 'auto',
+      maxHeight: '120px',
+      wordBreak: 'break-word',
+      border: theme.border,
+      borderRadius: '4px',
+    });
 
     p2Container.appendChild(p2);
     translatedDiv.appendChild(translatedTitle);
@@ -747,33 +949,41 @@ function createPopup(text: TranslationResult): HTMLDivElement {
 
     const footer = document.createElement('div');
     Object.assign(footer.style, {
-      position: 'absolute',
-      bottom: '0',
-      left: '0',
-      right: '0',
-      height: '3em',
+      margin: '0',
+      padding: '8px 12px',
+      minHeight: '45px',
       display: 'flex',
       justifyContent: 'space-between',
-      padding: '0.5em 0.8em',
+      flexWrap: 'wrap',
+      gap: '8px',
       borderTop: theme.border,
       backgroundColor: theme.backgroundColor,
       alignItems: 'center',
+      flexShrink: '0',
     } as CSSStyleDeclaration);
 
     const createButton = (text: string, onClick: () => void) => {
       const button = document.createElement('button');
       button.innerText = text;
       Object.assign(button.style, {
-        padding: '0.25em 0.5em',
+        margin: '0',
+        padding: '6px 12px',
         border: theme.border,
         borderRadius: '4px',
         backgroundColor: 'transparent',
         color: theme.color,
         cursor: 'pointer',
-        fontSize: 'clamp(0.5em, 1.5vw, 0.9em)',
-        maxHeight: '2em',
+        fontSize: '14px',
+        minWidth: '100px',
+        height: '30px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
       } as CSSStyleDeclaration);
-      button.addEventListener('click', onClick);
+      button.addEventListener('click', (e) => {
+        e.stopPropagation();
+        onClick();
+      });
       return button;
     };
 
@@ -806,13 +1016,16 @@ function createPopup(text: TranslationResult): HTMLDivElement {
     footer.appendChild(copyOriginalBtn);
     footer.appendChild(copyTranslatedBtn);
 
-    closeButton.onclick = () => {
-      // Clean up style element
+    closeButton.onclick = (e) => {
+      e.stopPropagation();
+
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+
       if (document.head.contains(style)) {
         document.head.removeChild(style);
       }
 
-      // Animate out
       div.style.opacity = '0';
       div.style.transform = 'translate(-50%, -50%) scale(0.95)';
 
@@ -827,6 +1040,41 @@ function createPopup(text: TranslationResult): HTMLDivElement {
         }
       }, 300);
     };
+
+    // Add a backdrop to prevent interaction with underlying page
+    const backdrop = document.createElement('div');
+    Object.assign(backdrop.style, {
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      width: '100%',
+      height: '100%',
+      backgroundColor: 'transparent',
+      zIndex: (parseInt(MAXIMUM_Z_INDEX) - 1).toString(),
+      pointerEvents: 'none', // Initially set to none
+    });
+    document.body.appendChild(backdrop);
+
+    // Link popup and backdrop for cleanup
+    div.dataset.backdropId = backdrop.id = `backdrop-${Date.now()}`;
+
+    // Use MutationObserver instead of deprecated DOMNodeRemoved event
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (
+          mutation.type === 'childList' &&
+          Array.from(mutation.removedNodes).includes(div) &&
+          document.body.contains(backdrop)
+        ) {
+          document.body.removeChild(backdrop);
+          observer.disconnect();
+          break;
+        }
+      }
+    });
+
+    // Start observing the document body for configured mutations
+    observer.observe(document.body, { childList: true });
 
     contentContainer.appendChild(originalDiv);
     contentContainer.appendChild(divider);
