@@ -24,14 +24,6 @@ A browser extension that lets you select an area on your screen, extract text fr
 4. Drag and drop the downloaded .zip file into the browser window
 5. The extension should now be installed and visible in your toolbar
 
-### Firefox
-
-1. Download the Firefox version from [GitHub Releases](https://github.com/apirJS/select-and-translate/releases)
-2. Open Firefox and navigate to `about:addons`
-3. Click the gear icon and select "Install Add-on From File"
-4. Select the downloaded .xpi file
-5. Accept the permissions and the extension will be installed
-
 ## Usage
 
 1. Click the extension icon in your browser toolbar or use the keyboard shortcut (Ctrl+Shift+Space by default)
