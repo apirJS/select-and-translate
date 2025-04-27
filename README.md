@@ -92,5 +92,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - Built with the WebExtension API
-- Uses Gemini API for text translation
+- Uses Gemini API for translation
 - Made with ❤️ by Echa (apir)
