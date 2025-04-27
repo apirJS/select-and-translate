@@ -9,7 +9,7 @@ A browser extension that lets you select an area on your screen, extract text fr
 - 📸 **Area Selection**: Drag to select any area on your screen that contains text
 - 🔍 **Text Extraction**: Automatically extracts text from the selected area
 - 🌐 **Translation**: Translates the extracted text to your chosen language
-- 💬 **40+ Languages**: Support for major languages including English, Spanish, Chinese, and many more
+- 💬 **Languages**: Support for major languages including English, Spanish, Chinese, and many more
 - 🌓 **Light/Dark Mode**: Automatically adapts to your browser's theme settings
 - ⌨️ **Keyboard Shortcut**: Quick access with Ctrl+Shift+Space
 - 📋 **Copy Text**: Easily copy original or translated text to clipboard
