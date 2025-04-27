@@ -2,7 +2,8 @@
 
 A browser extension that lets you select an area on your screen, extract text from it, and translate it instantly to your preferred language.
 
-![Select and Translate Demo](demo-image-url.gif)
+## Demo
+![Select and Translate Demo](demo/select-and-translate.gif)
 
 ## Features
 
