@@ -14,6 +14,7 @@ A browser extension that lets you select an area on your screen, extract text fr
 - 🌓 **Light/Dark Mode**: Automatically adapts to your browser's theme settings
 - ⌨️ **Keyboard Shortcut**: Quick access with Ctrl+Shift+Space
 - 📋 **Copy Text**: Easily copy original or translated text to clipboard
+- 🎈 **Lightweight**: Extension size smaller than 1MB
 
 ## Installation
 
@@ -57,8 +58,8 @@ A browser extension that lets you select an area on your screen, extract text fr
 This extension uses:
 
 - Browser Extension API with Manifest V3
-- TypeScript for type safety and better code organization
-- Modern CSS for responsive UI design
+- TypeScript for type safety
+- Vite for build tool
 
 ## Troubleshooting
 
@@ -92,5 +93,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - Built with the WebExtension API
-- Uses Gemini API for translation
+- Uses Gemini API
 - Made with ❤️ by Echa (apir)
