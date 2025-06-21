@@ -25,35 +25,6 @@ function moveHtmlToRoot(): import('vite').Plugin {
   };
 }
 
-function processManifest(): import('vite').Plugin {
-  return {
-    name: 'process-manifest',
-    closeBundle: async () => {
-      try {
-        // Make sure dist directory exists
-        const distDir = path.resolve(__dirname, 'dist');
-        await fs.ensureDir(distDir);
-
-        // Read the original manifest
-        const manifestPath = path.resolve(__dirname, 'manifest.json');
-        const manifestData = await fs.readJson(manifestPath);
-
-        // Remove reload_extension command
-        if (manifestData.commands && manifestData.commands.reload_extension) {
-          delete manifestData.commands.reload_extension;
-        }
-
-        // Write the modified manifest to the dist directory
-        const distManifestPath = path.resolve(distDir, 'manifest.json');
-        await fs.writeJson(distManifestPath, manifestData, { spaces: 2 });
-        console.log('Manifest written successfully');
-      } catch (error) {
-        console.error('Error processing manifest:', error);
-      }
-    },
-  };
-}
-
 export default defineConfig(({ mode }) => ({
   publicDir: false,
   define: {
@@ -61,12 +32,13 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     moveHtmlToRoot(),
-    processManifest(),
     viteStaticCopy({
-      targets: [{ src: 'public/*.png', dest: 'assets/img' }],
+      targets: [
+        { src: 'manifest.json', dest: '' },
+        { src: 'public/*.png', dest: 'assets/img' },
+      ],
     }),
   ],
-
   build: {
     emptyOutDir: true,
     sourcemap: mode === 'development',

@@ -405,10 +405,11 @@ function cropCanvas(
       croppedCanvas.height = rectangle.height;
 
       const ctx = croppedCanvas.getContext('2d');
-      if (!ctx)
+      if (!ctx) {
         return reject(
           new TypedError('DOMCanvasError', 'Canvas context not available')
         );
+      }
 
       ctx.drawImage(
         canvas,
@@ -423,6 +424,7 @@ function cropCanvas(
       );
 
       resolve(croppedCanvas);
+      return;
     } catch (error) {
       reject(
         new TypedError(
@@ -432,6 +434,7 @@ function cropCanvas(
           }`
         )
       );
+      return;
     }
   });
 }

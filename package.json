@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && vite build --config vite.config.content.ts",
+    "build:dev": "tsc && vite build --config vite.config.dev.ts && vite build --config vite.config.content.ts",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@playwright/test": "^1.53.1",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.14.1",
     "@types/webextension-polyfill": "^0.12.3",

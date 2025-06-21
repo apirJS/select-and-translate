@@ -34,7 +34,6 @@ export type TranslationResult = {
 
 export type Rectangle = { x: number; y: number; width: number; height: number };
 
-
 export type ErrorType =
   | 'DOMElementMissingError'
   | 'DOMCanvasError'
@@ -48,6 +47,9 @@ export type ErrorType =
   | 'TimeoutReached'
   | 'UserEscapeKeyPressed'
   | 'CommunicationError'
-  | 'ContentScriptError';
+  | 'ContentScriptError'
+  | 'NetworkError'
+  | 'PermissionError'
+  | 'UnknownError';
 
 export type ErrorWithType = { errorType: ErrorType; errorMessage: string };

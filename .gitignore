@@ -23,3 +23,13 @@ dist-ssr
 *.sln
 *.sw?
 playground*
+
+# release
+*v*.zip
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+test-user-data-dir

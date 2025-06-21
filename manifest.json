@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/chrome-manifest.json",
   "manifest_version": 3,
   "name": "select and translate",
-  "version": "0.0.6",
+  "version": "1.0.0",
   "description": "Browser extension that translates text from any part of a webpage by selecting the area with your cursor",
   "background": {
     "service_worker": "assets/js/background.js",
@@ -45,6 +45,13 @@
         "mac": "Ctrl+Shift+Space"
       },
       "description": "Select and Translate"
+    },
+    "reload_extension": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Ctrl+Shift+Y"
+      },
+      "description": "Reload the extension"
     }
   },
   "content_security_policy": {

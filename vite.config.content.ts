@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => ({
     sourcemap: mode === 'development',
     minify: false,
     rollupOptions: {
+      external: ['playwright', '@playwright/test', /playwright-.*/],
       input: {
         content: path.resolve(__dirname, 'src/content.ts'),
       },

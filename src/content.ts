@@ -8,45 +8,69 @@ import { TypedError } from './lib/utils';
 
 browser.runtime.onMessage.addListener(async (message: unknown) => {
   const typedMessage = message as Message;
-  try {
-    if (typedMessage.type === 'ping') {
-      return Promise.resolve('pong');
-    }
 
-    if (typedMessage.type === 'user-select') {
-      const croppedCanvas = await selectAndCropImage(
-        typedMessage.payload.imageDataUrl
-      );
-      return croppedCanvas.toDataURL('image/png');
-    } else if (typedMessage.type === 'translation-result') {
-      await hideLoadingToast('success');
-      showModalToViewport(typedMessage.payload);
-    } else if (typedMessage.type === 'error') {
-      await hideLoadingToast('failed');
+  try {
+    switch (typedMessage.type) {
+      case 'ping':
+        return Promise.resolve('pong');
+
+      case 'user-select': {
+        try {
+          const croppedCanvas = await selectAndCropImage(
+            typedMessage.payload.imageDataUrl
+          );
+          return croppedCanvas.toDataURL('image/png');
+        } catch (error) {
+          if (!(error instanceof TypedError)) {
+            return new TypedError(
+              'SelectionBoxError',
+              error instanceof Error ? error.message : 'Invalid selection area'
+            );
+          }
+          return error;
+        }
+      }
+
+      case 'translation-result':
+        await hideLoadingToast('success');
+        showModalToViewport(typedMessage.payload);
+        return;
+
+      case 'error':
+        await hideLoadingToast('failed');
+        return;
     }
   } catch (error) {
     await hideLoadingToast('failed');
 
+    // Format error response based on error type
     if (error instanceof TypedError) {
-      return {
-        errorType: error.errorType,
-        errorMessage: error.message,
-      };
-    } else if (error instanceof Error) {
-      return {
-        errorType: 'ContentScriptError',
-        errorMessage: error.message,
-      };
-    } else if (typeof error === 'object' && error !== null) {
-      return {
-        errorType: 'ContentScriptError',
-        errorMessage: JSON.stringify(error),
-      };
-    } else {
-      return {
-        errorType: 'ContentScriptError',
-        errorMessage: String(error),
-      };
+      return error;
     }
+
+    const errorType = 'ContentScriptError';
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'object'
+        ? JSON.stringify(error)
+        : String(error);
+
+    return new TypedError(errorType, errorMessage);
   }
 });
+
+window.addEventListener(
+  'trigger-select-and-translate',
+  async () => {
+    console.log('Test-only trigger received!');
+    await browser.runtime.sendMessage({
+      type: 'run-translation',
+      payload: {
+        fromLanguage: 'en-US',
+        toLanguage: 'id-ID',
+      },
+    });
+  },
+  false
+);

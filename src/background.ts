@@ -1,6 +1,6 @@
 import * as browser from 'webextension-polyfill';
-import { ErrorWithType, Message, TranslationResult } from './lib/types';
-import { categorizeError, isError, TypedError } from './lib/utils';
+import { Message, TranslationResult } from './lib/types';
+import { categorizeError, isTypedError, TypedError } from './lib/utils';
 console.log('[service_worker] Background script loaded');
 
 async function requestTranslation(
@@ -54,7 +54,7 @@ async function requestTranslation(
         }
 
         const result: TranslationResult = await response.json();
-        if (!result.originalText || !result.translatedText) {
+        if (result.originalText === null && result.translatedText === null) {
           throw new TypedError(
             'TranslationError',
             'No text detected in the image or translation failed'
@@ -117,7 +117,7 @@ async function injectContentScript(tabId: number): Promise<void> {
           // Still loading
         }
 
-        await new Promise((r) => setTimeout(r, 50));
+        await new Promise((r) => setTimeout(r, 100));
         attempts++;
       }
 
@@ -132,7 +132,7 @@ async function injectContentScript(tabId: number): Promise<void> {
   }
 }
 
-async function handleTranslation(
+export async function handleTranslation(
   fromLang?: string,
   toLang?: string
 ): Promise<boolean> {
@@ -142,31 +142,38 @@ async function handleTranslation(
       currentWindow: true,
     });
 
-    if (!tab) {
-      throw new TypedError('TabQueryError', 'No active tab found.');
+    if (!tab?.id) {
+      throw new TypedError(
+        'TabQueryError',
+        'No active tab found or tab ID missing'
+      );
     }
 
     const tabId = tab.id;
-    if (!tabId) {
-      throw new TypedError('TabQueryError', 'Failed to retrieve tab ID.');
-    }
 
     await injectContentScript(tabId);
 
     const imageDataUrl = await browser.tabs.captureVisibleTab(undefined, {
       format: 'png',
     });
-    const selectionResult: string | ErrorWithType =
-      await browser.tabs.sendMessage(tabId, {
-        type: 'user-select',
-        payload: {
-          tabId,
-          imageDataUrl,
-        },
-      } as Message);
 
-    if (isError(selectionResult)) {
+    const selectionResult = await browser.tabs.sendMessage(tabId, {
+      type: 'user-select',
+      payload: { tabId, imageDataUrl },
+    } as Message);
+
+    if (isTypedError(selectionResult)) {
       throw selectionResult;
+    }
+
+    if (
+      typeof selectionResult !== 'string' ||
+      !selectionResult.startsWith('data:image/')
+    ) {
+      throw new TypedError(
+        'SelectionBoxError',
+        'Invalid selection result: not a valid image'
+      );
     }
 
     const translationResult = await requestTranslation(
@@ -174,6 +181,7 @@ async function handleTranslation(
       fromLang,
       toLang
     );
+
     await browser.tabs.sendMessage(tabId, {
       type: 'translation-result',
       payload: translationResult,
@@ -181,54 +189,69 @@ async function handleTranslation(
 
     return true;
   } catch (error) {
+    await handleExtensionError(error);
+    return false;
+  }
+}
+
+async function handleExtensionError(error: unknown): Promise<void> {
+  try {
+    const isCommunicationError =
+      error instanceof Error &&
+      error.message.includes('Receiving end does not exist');
+
+    if (!isCommunicationError) {
+      await notifyContentScriptOfError(error);
+    }
+
+    let typedError: TypedError;
+
+    if (isCommunicationError) {
+      typedError = new TypedError(
+        'CommunicationError',
+        'Failed to communicate with the page. The tab may have changed or navigation occurred.'
+      );
+    } else if (isTypedError(error)) {
+      typedError = error;
+    } else {
+      typedError = new TypedError(
+        'UnknownError',
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+
+    await reportError(typedError);
+  } catch (metaError) {
+    console.error('Critical error in error handling system:', metaError);
+  }
+}
+
+async function notifyContentScriptOfError(error: unknown): Promise<void> {
+  try {
     const [tab] = await browser.tabs.query({
       active: true,
       currentWindow: true,
     });
 
-    if (tab && tab.id) {
-      await browser.tabs.sendMessage(tab.id, {
-        type: 'error',
-        payload: { error },
-      } as Message);
+    if (tab?.id) {
+      await browser.tabs
+        .sendMessage(tab.id, {
+          type: 'error',
+          payload: { error },
+        } as Message)
+        .catch(() => {
+          // Silently absorb nested communication errors
+        });
     }
-
-    if (isError(error)) {
-      if (
-        error.errorType === 'TimeoutReached' ||
-        error.errorType === 'UserEscapeKeyPressed'
-      ) {
-        return false;
-      } else {
-        await reportError(new Error(error.errorMessage));
-        return false;
-      }
-    }
-
-    if (
-      error instanceof Error &&
-      error.message.includes('Receiving end does not exist')
-    ) {
-      await reportError(
-        new TypedError(
-          'CommunicationError',
-          'Failed to communicate with the page. The tab may have changed or navigation occurred.'
-        )
-      );
-      return false;
-    }
-
-    if (error instanceof TypedError) {
-      await reportError(error, error.errorType);
-    } else {
-      await reportError(error);
-    }
-
-    return false;
+  } catch {
+    // Ignore failures here - this is just a best-effort notification
   }
 }
 
-async function reportError(error: unknown, title = 'Extension Error') {
+async function reportError(
+  error: TypedError | unknown,
+  title?: string
+): Promise<void> {
   const errorInfo = categorizeError(error);
 
   if (!errorInfo.shouldNotify) {
@@ -236,16 +259,30 @@ async function reportError(error: unknown, title = 'Extension Error') {
     return;
   }
 
-  await browser.notifications.create({
-    type: 'basic',
-    iconUrl: '/assets/img/icon.png',
-    title: errorInfo.type === 'network' ? 'Connection Error' : title,
-    message: errorInfo.message,
-  });
+  const notificationTitle = title || errorInfo.type || 'unknown error';
+
+  await browser.notifications
+    .create({
+      type: 'basic',
+      iconUrl: '/assets/img/icon.png',
+      title: notificationTitle,
+      message: errorInfo.message,
+    })
+    .catch((e) => console.error('Failed to show notification:', e));
 }
 
-browser.commands.onCommand.addListener(async () => {
-  await handleTranslation();
+browser.commands.onCommand.addListener(async (command: string) => {
+  switch (command) {
+    case 'select_and_translate':
+      await handleTranslation();
+      break;
+    case 'reload_extension':
+      browser.runtime.reload();
+      console.log('[service_worker] Extension reloaded.');
+      break;
+    default:
+      break;
+  }
 });
 
 browser.runtime.onMessage.addListener((message: unknown) => {
@@ -270,3 +307,4 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
     contentScriptStates.delete(tabId);
   }
 });
+

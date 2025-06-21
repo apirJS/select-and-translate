@@ -1,5 +1,4 @@
-import { ErrorType, ErrorWithType } from './types';
-
+import { ErrorType } from './types';
 export class TypedError extends Error {
   public errorType: ErrorType;
 
@@ -9,20 +8,20 @@ export class TypedError extends Error {
   }
 }
 
-export function isError(obj: unknown): obj is ErrorWithType {
+export function isTypedError(obj: unknown): obj is TypedError {
   return (
     typeof obj === 'object' &&
     obj !== null &&
     'errorType' in obj &&
     typeof obj.errorType === 'string' &&
-    'errorMessage' in obj &&
-    typeof obj.errorMessage === 'string'
+    (('message' in obj && typeof obj.message === 'string') ||
+      ('errorMessage' in obj && typeof obj.errorMessage === 'string'))
   );
 }
 
 export function categorizeError(error: unknown): {
-  type: 'user' | 'network' | 'permission' | 'system';
-  errorType: string;
+  type: 'user' | 'network' | 'permission' | 'extension';
+  errorType: ErrorType;
   message: string;
   shouldNotify: boolean;
 } {
@@ -36,7 +35,7 @@ export function categorizeError(error: unknown): {
   ) {
     return {
       type: 'user',
-      errorType: String(error.errorType),
+      errorType: error.errorType,
       message:
         'errorMessage' in error
           ? String(error.errorMessage)
@@ -47,7 +46,9 @@ export function categorizeError(error: unknown): {
 
   // Network errors - notify but with specific message
   if (
-    (error instanceof TypeError && error.message.includes('NetworkError')) ||
+    (error instanceof Error &&
+      (error.message.toLowerCase().includes('fetch') ||
+        error.message.includes('NetworkError'))) ||
     (typeof error === 'object' &&
       error !== null &&
       'errorType' in error &&
@@ -63,7 +64,8 @@ export function categorizeError(error: unknown): {
 
   // Permission errors
   if (
-    (error instanceof Error && error.message.includes('Permission')) ||
+    (error instanceof Error &&
+      error.message.toLowerCase().includes('permission')) ||
     (typeof error === 'object' &&
       error !== null &&
       'errorType' in error &&
@@ -78,6 +80,16 @@ export function categorizeError(error: unknown): {
     };
   }
 
+  // Translation Error - No text detected
+  if (error instanceof TypedError && error.errorType === 'TranslationError') {
+    return {
+      type: 'extension',
+      errorType: 'TranslationError',
+      message: 'No text found',
+      shouldNotify: true,
+    };
+  }
+
   // System/other errors
   const errorMessage =
     error instanceof Error
@@ -87,7 +99,7 @@ export function categorizeError(error: unknown): {
       : String(error);
 
   return {
-    type: 'system',
+    type: 'extension',
     errorType: error instanceof TypedError ? error.errorType : 'UnknownError',
     message: errorMessage,
     shouldNotify: true,
