@@ -36,7 +36,6 @@ body {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Switch to dark mode */
     --bg-color: var(--bg-color-dark);
     --text-color: var(--text-color-dark);
     --border-color: var(--border-color-dark);
@@ -45,21 +44,29 @@ body {
   }
 }
 
-main {
+.popup-container {
   padding: 16px;
 }
 
-h3 {
+header {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+h2 {
   margin-top: 0;
   margin-bottom: 16px;
   font-size: 18px;
   font-weight: 600;
-  text-align: center;
   color: var(--accent-color);
 }
 
 .language-selector {
   margin-bottom: 16px;
+}
+
+.selector-group {
+  margin-bottom: 12px;
 }
 
 label {
@@ -83,57 +90,63 @@ select:focus {
   border-color: var(--accent-color);
 }
 
-.shortcut-section {
-  text-align: center;
-  margin-top: 16px;
-}
-
-.settings-button {
-  background-color: var(--accent-color);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 16px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.settings-button:hover {
-  background-color: var(--hover-color);
-  filter: brightness(1.1);
-}
-
-
-.run-section {
-  text-align: center;
+.actions {
   margin: 20px 0;
 }
 
-.run-button {
+.action-buttons {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  background-color: var(--accent-color);
-  color: white;
-  border: none;
-  border-radius: 4px;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.primary-button,
+.secondary-button {
   padding: 10px 16px;
+  border-radius: 4px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  border: none;
 }
 
-.run-button:hover {
+.primary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   background-color: var(--accent-color);
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.primary-button div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shortcut-hint {
+  font-size: 11px;
+  opacity: 0.7;
+  font-weight: normal;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.secondary-button {
+  background-color: var(--hover-color);
+  color: var(--text-color);
+}
+
+.primary-button:hover,
+.secondary-button:hover {
   filter: brightness(1.1);
   transform: translateY(-1px);
 }
 
-.run-button:active {
+.primary-button:active,
+.secondary-button:active {
   transform: translateY(1px);
 }
 
@@ -144,31 +157,18 @@ select:focus {
   border-top: 6px solid transparent;
   border-bottom: 6px solid transparent;
   border-left: 10px solid white;
-  margin-right: 2px;
 }
 
-.run-button {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.run-section {
-  margin-bottom: 16px;
-  padding: 0 10px;
-}
-
-/* GitHub and Donate buttons */
-.links-section {
-  display: flex;
-  justify-content: space-between;
+.links {
   margin-top: 16px;
-  gap: 10px;
+  display: flex;
+  justify-content: center;
 }
 
 .link-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
   gap: 6px;
   padding: 8px 12px;
   border-radius: 4px;
@@ -177,15 +177,7 @@ select:focus {
   text-decoration: none;
   transition: all 0.2s ease;
   cursor: pointer;
-}
-
-.github-button {
   background-color: #24292e;
-  color: white;
-}
-
-.donate-button {
-  background-color: #ff5e5b;
   color: white;
 }
 
@@ -199,14 +191,23 @@ select:focus {
   transform: translateY(1px);
 }
 
-.github-icon, .donate-icon {
+.github-icon {
   width: 16px;
   height: 16px;
 }
 
-/* Add media query to handle very small screens */
 @media (max-width: 280px) {
-  .links-section {
+  .action-buttons {
     flex-direction: column;
+  }
+
+  .primary-button {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .shortcut-hint {
+    font-size: 10px;
+    margin-top: 4px;
   }
 }

@@ -1,10 +1,10 @@
-import {
-  hideLoadingToast,
-  selectAndCropImage,
-  showPopupToViewport,
-} from './lib/dom';
+import { showModalToViewport } from './lib/dom/modal';
+import { hideLoadingToast } from './lib/dom/loadingToast';
+import { selectAndCropImage } from './lib/dom/overlay';
 import { Message } from './lib/types';
+
 import * as browser from 'webextension-polyfill';
+import { TypedError } from './lib/utils';
 
 browser.runtime.onMessage.addListener(async (message: unknown) => {
   const typedMessage = message as Message;
@@ -20,12 +20,33 @@ browser.runtime.onMessage.addListener(async (message: unknown) => {
       return croppedCanvas.toDataURL('image/png');
     } else if (typedMessage.type === 'translation-result') {
       await hideLoadingToast('success');
-      showPopupToViewport(typedMessage.payload);
+      showModalToViewport(typedMessage.payload);
     } else if (typedMessage.type === 'error') {
       await hideLoadingToast('failed');
     }
   } catch (error) {
     await hideLoadingToast('failed');
-    return error;
+
+    if (error instanceof TypedError) {
+      return {
+        errorType: error.errorType,
+        errorMessage: error.message,
+      };
+    } else if (error instanceof Error) {
+      return {
+        errorType: 'ContentScriptError',
+        errorMessage: error.message,
+      };
+    } else if (typeof error === 'object' && error !== null) {
+      return {
+        errorType: 'ContentScriptError',
+        errorMessage: JSON.stringify(error),
+      };
+    } else {
+      return {
+        errorType: 'ContentScriptError',
+        errorMessage: String(error),
+      };
+    }
   }
 });
