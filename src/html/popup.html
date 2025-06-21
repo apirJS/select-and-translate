@@ -2,77 +2,132 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Popup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Select and Translate</title>
     <link rel="stylesheet" href="../styles/popup.css" />
   </head>
   <body>
-    <main>
-      <h3>Select and Translate</h3>
-      <div class="language-selector">
-        <label for="lang">Target language:</label>
-        <select name="select" id="lang">
-          <option value="Indonesia" selected>Indonesia (id)</option>
-          <option value="Arabic">Arabic (ar)</option>
-          <option value="Bengali">Bengali (bn)</option>
-          <option value="Bulgarian">Bulgarian (bg)</option>
-          <option value="Chinese">Chinese (zh)</option>
-          <option value="Croatian">Croatian (hr)</option>
-          <option value="Czech">Czech (cs)</option>
-          <option value="Danish">Danish (da)</option>
-          <option value="Dutch">Dutch (nl)</option>
-          <option value="English">English (en)</option>
-          <option value="Estonian">Estonian (et)</option>
-          <option value="Finnish">Finnish (fi)</option>
-          <option value="French">French (fr)</option>
-          <option value="German">German (de)</option>
-          <option value="Greek">Greek (el)</option>
-          <option value="Hebrew">Hebrew (he)</option>
-          <option value="Hindi">Hindi (hi)</option>
-          <option value="Hungarian">Hungarian (hu)</option>
-          <option value="Italian">Italian (it)</option>
-          <option value="Japanese">Japanese (ja)</option>
-          <option value="Korean">Korean (ko)</option>
-          <option value="Latvian">Latvian (lv)</option>
-          <option value="Lithuanian">Lithuanian (lt)</option>
-          <option value="Norwegian">Norwegian (no)</option>
-          <option value="Polish">Polish (pl)</option>
-          <option value="Portuguese">Portuguese (pt)</option>
-          <option value="Romanian">Romanian (ro)</option>
-          <option value="Russian">Russian (ru)</option>
-          <option value="Serbian">Serbian (sr)</option>
-          <option value="Slovak">Slovak (sk)</option>
-          <option value="Slovenian">Slovenian (sl)</option>
-          <option value="Spanish">Spanish (es)</option>
-          <option value="Swahili">Swahili (sw)</option>
-          <option value="Swedish">Swedish (sv)</option>
-          <option value="Thai">Thai (th)</option>
-          <option value="Turkish">Turkish (tr)</option>
-          <option value="Ukrainian">Ukrainian (uk)</option>
-          <option value="Vietnamese">Vietnamese (vi)</option>
-        </select>
-      </div>
-      <div class="run-section">
-        <button
-          id="run-btn"
-          class="run-button"
-          title="Run Select and Translate"
-        >
-          <span class="play-icon"></span>
-          <span>Translate</span>
-        </button>
-      </div>
-      <div class="shortcut-section">
-        <button id="shortcuts-btn" class="settings-button">
-          Change Shortcut
-        </button>
-      </div>
-      <div class="links-section">
-        <a
-          href="#"
-          id="github-btn"
-          class="link-button github-button"
-          title="View on GitHub"
-        >
+    <main class="popup-container">
+      <header>
+        <h2>Select and Translate</h2>
+      </header>
+
+      <section class="language-selector">
+        <!-- From language -->
+        <div class="selector-group">
+          <label for="from-lang">From language:</label>
+          <select id="from-lang" name="from-language">
+            <option value="auto-detect" selected>Auto Detect</option>
+            <option value="ar-SA">Arabic</option>
+            <option value="bn-IN">Bengali</option>
+            <option value="bg-BG">Bulgarian</option>
+            <option value="zh-CN">Chinese</option>
+            <option value="hr-HR">Croatian</option>
+            <option value="cs-CZ">Czech</option>
+            <option value="da-DK">Danish</option>
+            <option value="nl-NL">Dutch</option>
+            <option value="en-US">English</option>
+            <option value="et-EE">Estonian</option>
+            <option value="fi-FI">Finnish</option>
+            <option value="fr-FR">French</option>
+            <option value="de-DE">German</option>
+            <option value="el-GR">Greek</option>
+            <option value="he-IL">Hebrew</option>
+            <option value="hi-IN">Hindi</option>
+            <option value="hu-HU">Hungarian</option>
+            <option value="id-ID">Indonesian</option>
+            <option value="it-IT">Italian</option>
+            <option value="ja-JP">Japanese</option>
+            <option value="ko-KR">Korean</option>
+            <option value="lv-LV">Latvian</option>
+            <option value="lt-LT">Lithuanian</option>
+            <option value="nb-NO">Norwegian</option>
+            <option value="pl-PL">Polish</option>
+            <option value="pt-PT">Portuguese</option>
+            <option value="ro-RO">Romanian</option>
+            <option value="ru-RU">Russian</option>
+            <option value="sr-RS">Serbian</option>
+            <option value="sk-SK">Slovak</option>
+            <option value="sl-SI">Slovenian</option>
+            <option value="es-ES">Spanish</option>
+            <option value="sw-KE">Swahili</option>
+            <option value="sv-SE">Swedish</option>
+            <option value="th-TH">Thai</option>
+            <option value="tr-TR">Turkish</option>
+            <option value="uk-UA">Ukrainian</option>
+            <option value="vi-VN">Vietnamese</option>
+          </select>
+        </div>
+
+        <!-- To language -->
+        <div class="selector-group">
+          <label for="to-lang">To language:</label>
+          <select id="to-lang" name="to-language">
+            <option value="auto-detect" selected>Browser Default</option>
+            <option value="ar-SA">Arabic</option>
+            <option value="bn-IN">Bengali</option>
+            <option value="bg-BG">Bulgarian</option>
+            <option value="zh-CN">Chinese</option>
+            <option value="hr-HR">Croatian</option>
+            <option value="cs-CZ">Czech</option>
+            <option value="da-DK">Danish</option>
+            <option value="nl-NL">Dutch</option>
+            <option value="en-US">English</option>
+            <option value="et-EE">Estonian</option>
+            <option value="fi-FI">Finnish</option>
+            <option value="fr-FR">French</option>
+            <option value="de-DE">German</option>
+            <option value="el-GR">Greek</option>
+            <option value="he-IL">Hebrew</option>
+            <option value="hi-IN">Hindi</option>
+            <option value="hu-HU">Hungarian</option>
+            <option value="id-ID">Indonesian</option>
+            <option value="it-IT">Italian</option>
+            <option value="ja-JP">Japanese</option>
+            <option value="ko-KR">Korean</option>
+            <option value="lv-LV">Latvian</option>
+            <option value="lt-LT">Lithuanian</option>
+            <option value="nb-NO">Norwegian</option>
+            <option value="pl-PL">Polish</option>
+            <option value="pt-PT">Portuguese</option>
+            <option value="ro-RO">Romanian</option>
+            <option value="ru-RU">Russian</option>
+            <option value="sr-RS">Serbian</option>
+            <option value="sk-SK">Slovak</option>
+            <option value="sl-SI">Slovenian</option>
+            <option value="es-ES">Spanish</option>
+            <option value="sw-KE">Swahili</option>
+            <option value="sv-SE">Swedish</option>
+            <option value="th-TH">Thai</option>
+            <option value="tr-TR">Turkish</option>
+            <option value="uk-UA">Ukrainian</option>
+            <option value="vi-VN">Vietnamese</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="actions">
+        <div class="action-buttons">
+          <button
+            id="run-btn"
+            class="primary-button"
+            title="Run Select and Translate"
+          >
+            <div>
+              <span class="play-icon"></span>
+              <span>Translate</span>
+            </div>
+            <span class="shortcut-hint">(Ctrl+Shift+Space)</span>
+          </button>
+
+          <button id="shortcuts-btn" class="secondary-button">
+            Change Shortcut
+          </button>
+        </div>
+      </section>
+
+      <footer class="links">
+        <a href="#" id="github-btn" class="link-button" title="View on GitHub">
           <svg
             class="github-icon"
             xmlns="http://www.w3.org/2000/svg"
@@ -87,28 +142,9 @@
           </svg>
           GitHub
         </a>
-        <a
-          href="#"
-          id="donate-btn"
-          class="link-button donate-button"
-          title="Support this project"
-        >
-          <svg
-            class="donate-icon"
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-          >
-            <path
-              fill="currentColor"
-              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-            />
-          </svg>
-          Donate
-        </a>
-      </div>
+      </footer>
     </main>
+
     <script type="module" defer src="../popup.ts"></script>
   </body>
 </html>
