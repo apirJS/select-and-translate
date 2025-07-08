@@ -176,7 +176,8 @@
 .translation-modal__text-container {
   padding: 14px !important;
   border: 1px solid var(--modal-border) !important;
-  border-radius: 8px !important;
+  border-radius: 8px 8px 0px 8px !important;
+  scrollbar-gutter: stable;
   width: 100% !important;
   min-height: 120px !important;
   max-height: 500px !important;
@@ -236,6 +237,29 @@
 /* Re-enable transitions after resize */
 .translation-modal .translation-modal__text-container:not(:active) {
   transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+/* Custom resize handle styling using SVG icon */
+.translation-modal__text-container::-webkit-resizer {
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 15L15 21M21 8L8 21' stroke='%23757575' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: 12px 12px;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 0 0 0px 0;
+  transition: all 0.15s ease;
+  cursor: nw-resize;
+  opacity: 0.6;
+}
+
+.translation-modal__text-container:hover::-webkit-resizer {
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 15L15 21M21 8L8 21' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  opacity: 1;
+}
+
+.translation-modal__text-container:active::-webkit-resizer {
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 15L15 21M21 8L8 21' stroke='%23005fcc' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  opacity: 1;
 }
 
 /* Divider */
@@ -351,6 +375,22 @@
   
   .translation-modal * {
     scrollbar-color: var(--modal-border-strong) transparent;
+  }
+  
+  /* Dark mode resizer adjustments */
+  .translation-modal__text-container::-webkit-resizer {
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 15L15 21M21 8L8 21' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    opacity: 0.7;
+  }
+  
+  .translation-modal__text-container:hover::-webkit-resizer {
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 15L15 21M21 8L8 21' stroke='%23cccccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    opacity: 1;
+  }
+  
+  .translation-modal__text-container:active::-webkit-resizer {
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 15L15 21M21 8L8 21' stroke='%2366aaff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    opacity: 1;
   }
 }
 
