@@ -107,6 +107,17 @@ export function createHeading(
 }
 
 /**
+ * Create a textarea with specified class and text
+ */
+export function createTextarea(className: string, textContent: string, readonly: boolean = true): HTMLTextAreaElement {
+  return createElement('textarea', { 
+    className, 
+    textContent,
+    attributes: readonly ? { readonly: 'true' } : {}
+  });
+}
+
+/**
  * Add multiple CSS classes to an element
  */
 export function addClasses(element: HTMLElement, ...classNames: string[]): void {

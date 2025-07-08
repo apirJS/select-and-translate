@@ -5,8 +5,8 @@ import {
   createDiv,
   createButton,
   createSpan,
-  createParagraph,
   createHeading,
+  createTextarea,
   addClasses,
   removeClasses,
   appendChildren,
@@ -19,6 +19,22 @@ interface ModalComponents {
   modal: HTMLDivElement;
   backdrop: HTMLDivElement;
   cleanup: Cleanup;
+}
+
+// Global modal registry to prevent duplicates
+const modalRegistry = new Map<string, HTMLDivElement>();
+const creatingModals = new Set<string>();
+
+// Simple hash function for modal deduplication
+function createModalId(data: TranslationResult): string {
+  const content = `${data.originalText}|${data.translatedText}`;
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return `modal-${Math.abs(hash)}`;
 }
 
 export class TranslationModal {
@@ -85,10 +101,8 @@ export class TranslationModal {
     const section = createDiv('translation-modal__section');
     
     const titleElement = createHeading(3, 'translation-modal__section-title', title);
-    const textContainer = createDiv('translation-modal__text-container');
-    const textElement = createParagraph(`translation-modal__text ${contentClass}`, content);
+    const textContainer = createTextarea(`translation-modal__text-container ${contentClass}`, content, true);
     
-    appendChildren(textContainer, textElement);
     appendChildren(section, titleElement, textContainer);
     
     return section;
@@ -199,6 +213,13 @@ export class TranslationModal {
     const cleanup = () => {
       detachDrag();
       this.animateClose(modal, backdrop);
+      
+      // Clean up registry
+      const modalId = modal.getAttribute('data-modal-id');
+      if (modalId) {
+        modalRegistry.delete(modalId);
+        creatingModals.delete(modalId);
+      }
     };
 
     // Monitor for programmatic removal
@@ -240,11 +261,42 @@ export class TranslationModal {
   }
 
   /**
-   * Show the modal with animation
+   * Show the modal with animation and deduplication
    */
   show(): void {
     try {
+      const modalId = createModalId(this.data);
+      
+      // Check if modal is already being created
+      if (creatingModals.has(modalId)) {
+        console.log('Modal creation already in progress, skipping duplicate');
+        return;
+      }
+      
+      // Check if modal already exists
+      const existingModal = modalRegistry.get(modalId);
+      if (existingModal && document.body.contains(existingModal)) {
+        console.log('Modal already exists, bringing to front');
+        existingModal.style.zIndex = String(999999);
+        return;
+      }
+      
+      // Check for any existing modal with same content in DOM
+      const existingModalInDOM = document.querySelector(`[data-modal-id="${modalId}"]`);
+      if (existingModalInDOM) {
+        console.log('Found existing modal in DOM, skipping duplicate');
+        (existingModalInDOM as HTMLElement).style.zIndex = String(999999);
+        return;
+      }
+      
+      // Mark as being created
+      creatingModals.add(modalId);
+      
       const { modal, backdrop } = this.buildModalStructure();
+      
+      // Set modal ID for deduplication
+      modal.setAttribute('data-modal-id', modalId);
+      modalRegistry.set(modalId, modal);
       
       // Add entering animation class
       addClasses(modal, 'modal-entering');
@@ -256,9 +308,13 @@ export class TranslationModal {
       requestAnimationFrame(() => {
         removeClasses(modal, 'modal-entering');
         addClasses(modal, 'modal-entered');
+        // Mark creation as complete
+        creatingModals.delete(modalId);
       });
       
     } catch (err) {
+      const modalId = createModalId(this.data);
+      creatingModals.delete(modalId); // Clean up on error
       throw new TypedError(
         'DOMPopupError',
         `Failed to create popup: ${err instanceof Error ? err.message : String(err)}`

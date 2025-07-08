@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        #test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        #test-button:hover {
+            background: #0056b3;
+        }
+        
+        .test-content {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Modal Test Page - ID-Based Deduplication</h1>
+    
+    <div style="margin-bottom: 20px;">
+        <button id="test-button-1">Test Modal 1 (English → Spanish)</button>
+        <button id="test-button-2">Test Modal 2 (French → German)</button>
+        <button id="test-button-3">Test Modal 1 Again (Same Content)</button>
+        <button id="close-all">Close All Modals</button>
+    </div>
+    
+    <div class="test-content">
+        <h2>Instructions:</h2>
+        <ol>
+            <li><strong>Test Modal 1</strong>: Creates a modal with English → Spanish content</li>
+            <li><strong>Test Modal 2</strong>: Creates a different modal with French → German content</li>
+            <li><strong>Test Modal 1 Again</strong>: Tries to create the same modal as button 1 - should NOT create a duplicate</li>
+            <li><strong>Close All</strong>: Closes all open modals</li>
+            <li>Each modal should be draggable by its header and have resizable text areas</li>
+            <li>Multiple different modals can be open simultaneously</li>
+            <li>Identical modals are prevented from duplicating</li>
+        </ol>
+        
+        <h3>Expected Behavior:</h3>
+        <ul>
+            <li>✅ Button 1 and 2 should create different modals that can coexist</li>
+            <li>✅ Button 3 should NOT create a duplicate of Modal 1 (race condition prevention)</li>
+            <li>✅ Each modal shows a unique ID in its title</li>
+            <li>✅ The resize handle is always visible on text containers</li>
+            <li>✅ When you resize text containers, the modal should expand to accommodate the new size</li>
+            <li>✅ Modal buttons should never be cropped or hidden when text containers are resized</li>
+        </ul>
+        
+        <h3>Test the Fixes:</h3>
+        <ol>
+            <li><strong>Modal Duplication Fix</strong>: Rapidly click "Test Modal 1" multiple times - should only create one modal</li>
+            <li><strong>Modal Expansion Fix</strong>: Resize a text container to be very tall - modal should grow and buttons should remain visible</li>
+        </ol>
+    </div>
+
+    <script>
+        // Mock translation result data
+        const mockTranslationData1 = {
+            originalText: "Hello, how are you doing today? This is the first test modal with English content.",
+            translatedText: "Hola, ¿cómo estás hoy? Este es el primer modal de prueba con contenido en inglés."
+        };
+
+        const mockTranslationData2 = {
+            originalText: "Bonjour, comment allez-vous? Ceci est le deuxième modal de test avec du contenu français.",
+            translatedText: "Hallo, wie geht es Ihnen? Dies ist das zweite Testmodal mit französischem Inhalt."
+        };
+
+        // Global registry to track open modals (simulating the real implementation)
+        const openModals = new Map();
+        let modalCounter = 0;
+
+        // Generate modal ID based on content (simulating the real implementation)
+        function generateModalId(data) {
+            const content = `${data.originalText}|${data.translatedText}`;
+            let hash = 0;
+            for (let i = 0; i < content.length; i++) {
+                const char = content.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return `modal-${Math.abs(hash)}`;
+        }
+
+        // Simulate the modal functionality
+        function createTestModal(data, buttonLabel) {
+            const modalId = generateModalId(data);
+            
+            // Check if modal with this content already exists
+            const existingModal = openModals.get(modalId);
+            if (existingModal && document.contains(existingModal)) {
+                console.log(`Modal with ID ${modalId} already exists, skipping duplicate creation`);
+                alert(`Modal with this content already exists! (ID: ${modalId})`);
+                return;
+            }
+
+            console.log(`Creating new modal with ID: ${modalId}`);
+
+            // Create the test modal HTML structure
+            const modalHTML = `
+                <div class="test-modal-backdrop" data-modal-id="${modalId}" style="position: fixed; inset: 0; z-index: ${999998 + modalCounter}; background: rgba(0,0,0,0.3);">
+                    <div class="translation-modal" style="
+                        width: 400px;
+                        max-width: 90vw;
+                        min-height: 200px;
+                        position: fixed;
+                        top: ${50 + modalCounter * 30}%;
+                        left: ${50 + modalCounter * 5}%;
+                        transform: translate(-50%, -50%);
+                        display: flex;
+                        flex-direction: column;
+                        overflow: visible;
+                        border-radius: 8px;
+                        z-index: ${999999 + modalCounter};
+                        background: white;
+                        color: #333;
+                        border: 1px solid #ccc;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+                        font-size: 16px;
+                        line-height: 1.4;
+                    ">
+                        <div class="translation-modal__header" style="
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            padding: 0 1em;
+                            min-height: 45px;
+                            cursor: move;
+                            background: white;
+                            border-bottom: 1px solid #ccc;
+                            border-radius: 8px 8px 0 0;
+                        ">
+                            <span class="translation-modal__title" style="font-weight: bold; font-size: 16px;">Translation (ID: ${modalId.substring(6, 11)}...)</span>
+                            <button class="translation-modal__close-btn" style="
+                                border: none;
+                                background: transparent;
+                                font-size: 24px;
+                                cursor: pointer;
+                                padding: 0 5px;
+                            ">×</button>
+                        </div>
+                        <div class="translation-modal__content" style="
+                            display: flex;
+                            flex-direction: column;
+                            padding: 1em;
+                            gap: 15px;
+                            overflow: visible;
+                            flex-grow: 1;
+                        ">
+                            <div class="translation-modal__section">
+                                <h3 class="translation-modal__section-title" style="font-size: 14px; font-weight: bold; margin: 0 0 8px 0;">Original Text</h3>
+                                <div class="translation-modal__text-container" style="
+                                    padding: 10px;
+                                    border: 1px solid #ccc;
+                                    border-radius: 4px;
+                                    height: 80px;
+                                    max-height: 500px;
+                                    overflow: auto;
+                                    resize: vertical;
+                                    background: white;
+                                    font-size: 14px;
+                                    line-height: 1.5;
+                                    box-sizing: border-box;
+                                    transition: border-color 0.2s ease;
+                                ">
+                                    <span class="translation-modal__text" style="margin: 0; word-break: break-word; white-space: pre-wrap; display: block; width: 100%;">${data.originalText}</span>
+                                </div>
+                            </div>
+                            <div style="width: 90%; height: 1px; background: #ccc; align-self: center;"></div>
+                            <div class="translation-modal__section">
+                                <h3 class="translation-modal__section-title" style="font-size: 14px; font-weight: bold; margin: 0 0 8px 0;">Translated Text</h3>
+                                <div class="translation-modal__text-container" style="
+                                    padding: 10px;
+                                    border: 1px solid #ccc;
+                                    border-radius: 4px;
+                                    height: 80px;
+                                    max-height: 500px;
+                                    overflow: auto;
+                                    resize: vertical;
+                                    background: white;
+                                    font-size: 14px;
+                                    line-height: 1.5;
+                                    box-sizing: border-box;
+                                    transition: border-color 0.2s ease;
+                                ">
+                                    <span class="translation-modal__text" style="margin: 0; word-break: break-word; white-space: pre-wrap; display: block; width: 100%;">${data.translatedText}</span>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="translation-modal__footer" style="
+                            display: flex;
+                            gap: 8px;
+                            padding: 8px 12px;
+                            align-items: center;
+                            justify-content: space-between;
+                            min-height: 45px;
+                            border-top: 1px solid #ccc;
+                            background: white;
+                        ">
+                            <button style="
+                                padding: 6px 12px;
+                                min-width: 100px;
+                                height: 30px;
+                                font-size: 14px;
+                                border: 1px solid #ccc;
+                                border-radius: 4px;
+                                background: transparent;
+                                cursor: pointer;
+                            ">Copy Original</button>
+                            <button style="
+                                padding: 6px 12px;
+                                min-width: 100px;
+                                height: 30px;
+                                font-size: 14px;
+                                border: 1px solid #ccc;
+                                border-radius: 4px;
+                                background: transparent;
+                                cursor: pointer;
+                            ">Copy Translation</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Insert the modal into the page
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            const modal = document.querySelector(`[data-modal-id="${modalId}"] .translation-modal`);
+            const backdrop = document.querySelector(`[data-modal-id="${modalId}"]`);
+            const closeBtn = backdrop.querySelector('.translation-modal__close-btn');
+            const header = backdrop.querySelector('.translation-modal__header');
+
+            // Register modal in global registry
+            openModals.set(modalId, backdrop);
+            modalCounter++;
+
+            // Close modal functionality
+            function closeModal() {
+                backdrop.remove();
+                openModals.delete(modalId);
+                console.log(`Closed modal with ID: ${modalId}`);
+            }
+
+            closeBtn.addEventListener('click', closeModal);
+            backdrop.addEventListener('click', (e) => {
+                if (e.target === backdrop) closeModal();
+            });
+
+            // Drag functionality
+            let isDragging = false;
+            let dragOffset = { x: 0, y: 0 };
+
+            header.addEventListener('mousedown', (e) => {
+                if (e.target.tagName === 'BUTTON') return;
+                
+                isDragging = true;
+                const rect = modal.getBoundingClientRect();
+                dragOffset.x = e.clientX - rect.left;
+                dragOffset.y = e.clientY - rect.top;
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                modal.style.left = (e.clientX - dragOffset.x) + 'px';
+                modal.style.top = (e.clientY - dragOffset.y) + 'px';
+                modal.style.transform = 'none';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            // Add hover effects to text containers
+            backdrop.querySelectorAll('.translation-modal__text-container').forEach(container => {
+                container.addEventListener('mouseenter', () => {
+                    container.style.borderColor = '#007bff';
+                });
+                container.addEventListener('mouseleave', () => {
+                    container.style.borderColor = '#ccc';
+                });
+            });
+        }
+
+        // Event listeners for test buttons
+        document.getElementById('test-button-1').addEventListener('click', () => {
+            createTestModal(mockTranslationData1, 'Test Modal 1');
+        });
+
+        document.getElementById('test-button-2').addEventListener('click', () => {
+            createTestModal(mockTranslationData2, 'Test Modal 2');
+        });
+
+        document.getElementById('test-button-3').addEventListener('click', () => {
+            createTestModal(mockTranslationData1, 'Test Modal 1 Again'); // Same content as button 1
+        });
+
+        document.getElementById('close-all').addEventListener('click', () => {
+            // Close all modals
+            openModals.forEach((backdrop, modalId) => {
+                backdrop.remove();
+                console.log(`Closed modal with ID: ${modalId}`);
+            });
+            openModals.clear();
+            modalCounter = 0;
+            console.log('All modals closed');
+        });
+    </script>
+</body>
+</html>

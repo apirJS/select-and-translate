@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resize Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .test-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .test-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        /* Current extension approach */
+        .text-container {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            height: auto;
+            min-height: 80px;
+            max-height: 500px;
+            overflow: auto;
+            resize: vertical;
+            background: white;
+            color: #333;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.5;
+            box-sizing: border-box;
+        }
+
+        .text-container:hover {
+            border-color: #007acc;
+        }
+
+        .text-content {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+            user-select: text;
+            cursor: text;
+            color: #333;
+        }
+
+        /* Alternative: textarea approach */
+        .textarea-test {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            min-height: 80px;
+            max-height: 500px;
+            overflow: auto;
+            resize: vertical;
+            background: white;
+            color: #333;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.5;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .textarea-test:hover {
+            border-color: #007acc;
+        }
+
+        /* Alternative: contenteditable approach */
+        .editable-test {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            min-height: 80px;
+            max-height: 500px;
+            overflow: auto;
+            resize: vertical;
+            background: white;
+            color: #333;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.5;
+            box-sizing: border-box;
+        }
+
+        .editable-test:hover {
+            border-color: #007acc;
+        }
+
+        .editable-test[contenteditable]:focus {
+            outline: none;
+            border-color: #007acc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Resize Handle Test</h1>
+    
+    <div class="test-container">
+        <div class="test-title">1. Current Extension Approach (Div + P)</div>
+        <div class="text-container">
+            <p class="text-content">This is how our modal currently works. It has a div container with overflow:auto and resize:vertical, and inside it there's a p element with the text content. The resize handle should appear in the bottom-right corner.</p>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <div class="test-title">2. Textarea Approach (Native)</div>
+        <textarea class="textarea-test" readonly>This is a native textarea element with resize: vertical. This should definitely show a resize handle in the bottom-right corner since it's a form element that natively supports resizing.</textarea>
+    </div>
+
+    <div class="test-container">
+        <div class="test-title">3. ContentEditable Approach</div>
+        <div class="editable-test" contenteditable="true">This is a contenteditable div with resize: vertical. It allows editing and should show a resize handle. You can edit this text and resize the container.</div>
+    </div>
+
+    <div class="test-container">
+        <div class="test-title">4. Simple Div with Text</div>
+        <div class="text-container" style="white-space: pre-wrap;">This is a simple div with text content directly inside it (no nested p element). 
+
+It has multiple lines and should show a resize handle.
+
+The resize property should work on any block-level element with overflow set appropriately.</div>
+    </div>
+
+    <script>
+        // Test to verify resize handle visibility
+        document.addEventListener('DOMContentLoaded', function() {
+            const containers = document.querySelectorAll('.text-container, .textarea-test, .editable-test');
+            containers.forEach((container, index) => {
+                console.log(`Container ${index + 1}:`, {
+                    tagName: container.tagName,
+                    resize: getComputedStyle(container).resize,
+                    overflow: getComputedStyle(container).overflow,
+                    minHeight: getComputedStyle(container).minHeight,
+                    maxHeight: getComputedStyle(container).maxHeight
+                });
+            });
+        });
+    </script>
+</body>
+</html>
