@@ -1,25 +1,33 @@
+/* ==========================================================================
+  CSS VARIABLES - Color schemes for light and dark mode
+  ========================================================================== */
+
 :root {
   /* Light mode colors */
-  --bg-color-light: #ffffff;
-  --text-color-light: #333333;
-  --border-color-light: #dddddd;
-  --accent-color-light: #0078d7;
-  --hover-color-light: #f5f5f5;
+  --bg-color-light: hsl(0, 0%, 100%);        /* White background */
+  --text-color-light: hsl(0, 0%, 20%);       /* Dark gray text */
+  --border-color-light: hsl(0, 0%, 87%);     /* Light gray borders */
+  --accent-color-light: hsl(210, 100%, 42%); /* Blue accent */
+  --hover-color-light: hsl(0, 0%, 96%);      /* Very light gray for hover states */
 
   /* Dark mode colors */
-  --bg-color-dark: #1e1e1e;
-  --text-color-dark: #f0f0f0;
-  --border-color-dark: #444444;
-  --accent-color-dark: #3a96dd;
-  --hover-color-dark: #2a2a2a;
+  --bg-color-dark: hsl(0, 0%, 12%);          /* Very dark gray background */
+  --text-color-dark: hsl(0, 0%, 94%);        /* Off-white text */
+  --border-color-dark: hsl(0, 0%, 27%);      /* Medium gray borders */
+  --accent-color-dark: hsl(207, 69%, 55%);   /* Lighter blue accent for dark mode */
+  --hover-color-dark: hsl(0, 0%, 16%);       /* Slightly lighter than background for hover */
 
-  /* Default to light mode */
+  /* Default theme (light mode) */
   --bg-color: var(--bg-color-light);
   --text-color: var(--text-color-light);
   --border-color: var(--border-color-light);
   --accent-color: var(--accent-color-light);
   --hover-color: var(--hover-color-light);
 }
+
+/* ==========================================================================
+  BASE ELEMENTS
+  ========================================================================== */
 
 html,
 body {
@@ -28,21 +36,30 @@ body {
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', sans-serif;
+   Ubuntu, Cantarell, 'Open Sans', sans-serif;
   font-size: 14px;
   background-color: var(--bg-color);
   color: var(--text-color);
 }
 
+/* ==========================================================================
+  DARK MODE MEDIA QUERY
+  ========================================================================== */
+
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-color: var(--bg-color-dark);
-    --text-color: var(--text-color-dark);
-    --border-color: var(--border-color-dark);
-    --accent-color: var(--accent-color-dark);
-    --hover-color: var(--hover-color-dark);
+   /* Switch to dark mode variables when system preference is dark */
+   --bg-color: var(--bg-color-dark);
+   --text-color: var(--text-color-dark);
+   --border-color: var(--border-color-dark);
+   --accent-color: var(--accent-color-dark);
+   --hover-color: var(--hover-color-dark);
   }
 }
+
+/* ==========================================================================
+  LAYOUT COMPONENTS
+  ========================================================================== */
 
 .popup-container {
   padding: 16px;
@@ -60,6 +77,10 @@ h2 {
   font-weight: 600;
   color: var(--accent-color);
 }
+
+/* ==========================================================================
+  FORM ELEMENTS - Language selection controls
+  ========================================================================== */
 
 .language-selector {
   margin-bottom: 16px;
@@ -90,6 +111,10 @@ select:focus {
   border-color: var(--accent-color);
 }
 
+/* ==========================================================================
+  ACTION BUTTONS - Primary and secondary interaction elements
+  ========================================================================== */
+
 .actions {
   margin: 20px 0;
 }
@@ -100,6 +125,7 @@ select:focus {
   gap: 12px;
 }
 
+/* Base button styles */
 .primary-button,
 .secondary-button {
   padding: 10px 16px;
@@ -111,14 +137,15 @@ select:focus {
   border: none;
 }
 
+/* Primary action button */
 .primary-button {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   background-color: var(--accent-color);
-  color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: hsl(0, 0%, 100%);
+  box-shadow: 0 2px 4px hsla(0, 0%, 0%, 0.1);
 }
 
 .primary-button div {
@@ -127,18 +154,21 @@ select:focus {
   gap: 6px;
 }
 
+/* Keyboard shortcut hint */
 .shortcut-hint {
   font-size: 11px;
   opacity: 0.7;
   font-weight: normal;
-  color: rgba(255, 255, 255, 0.9);
+  color: hsla(0, 0%, 100%, 0.9);
 }
 
+/* Secondary action button */
 .secondary-button {
   background-color: var(--hover-color);
   color: var(--text-color);
 }
 
+/* Button hover and active states */
 .primary-button:hover,
 .secondary-button:hover {
   filter: brightness(1.1);
@@ -150,14 +180,19 @@ select:focus {
   transform: translateY(1px);
 }
 
+/* Play icon for audio buttons */
 .play-icon {
   display: inline-block;
   width: 0;
   height: 0;
   border-top: 6px solid transparent;
   border-bottom: 6px solid transparent;
-  border-left: 10px solid white;
+  border-left: 10px solid hsl(0, 0%, 100%);
 }
+
+/* ==========================================================================
+  LINK SECTION - External links and additional resources
+  ========================================================================== */
 
 .links {
   margin-top: 16px;
@@ -177,14 +212,14 @@ select:focus {
   text-decoration: none;
   transition: all 0.2s ease;
   cursor: pointer;
-  background-color: #24292e;
-  color: white;
+  background-color: hsl(214, 13%, 16%);
+  color: hsl(0, 0%, 100%);
 }
 
 .link-button:hover {
   transform: translateY(-1px);
   filter: brightness(1.1);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 5px hsla(0, 0%, 0%, 0.15);
 }
 
 .link-button:active {
@@ -196,19 +231,22 @@ select:focus {
   height: 16px;
 }
 
+/* ==========================================================================
+  RESPONSIVE STYLES - Adjustments for smaller screens
+  ========================================================================== */
+
 @media (max-width: 280px) {
   .action-buttons {
-    flex-direction: column;
+   flex-direction: column;
   }
 
   .primary-button {
-    flex-direction: column;
-    align-items: center;
+   flex-direction: column;
+   align-items: center;
   }
 
   .shortcut-hint {
-    font-size: 10px;
-    margin-top: 4px;
+   font-size: 10px;
+   margin-top: 4px;
   }
 }
-

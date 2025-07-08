@@ -1,0 +1,189 @@
+/* ==========================================================================
+  OVERLAY COMPONENT STYLES
+  ========================================================================== */
+
+:root {
+  /* Overlay specific variables using HSL colors */
+  --overlay-bg-light: hsla(0, 0%, 0%, 0.5);
+  --overlay-bg-dark: hsla(0, 0%, 0%, 0.7);
+  --overlay-z: 999997;
+  --canvas-z: 999999;
+  
+  /* Selection colors */
+  --selection-border-color: hsl(210, 100%, 42%);  /* Blue */
+  --selection-bg-color: hsla(210, 100%, 42%, 0.1);
+  --selection-border-width: 2px;
+  
+  /* Instruction overlay colors */
+  --instruction-bg-light: hsla(0, 0%, 0%, 0.8);
+  --instruction-bg-dark: hsla(0, 0%, 8%, 0.9);
+  --instruction-text: hsl(0, 0%, 100%);
+  --instruction-title: hsl(207, 69%, 55%);  /* Light blue */
+  
+  /* Cancel button colors */
+  --cancel-btn-bg: hsla(0, 84%, 60%, 0.9);     /* Red background */
+  --cancel-btn-bg-hover: hsla(0, 84%, 50%, 0.9); /* Darker red on hover */
+  --cancel-btn-text: hsl(0, 0%, 100%);
+  
+  /* Default values */
+  --overlay-bg: var(--overlay-bg-light);
+  --instruction-bg: var(--instruction-bg-light);
+}
+
+/* Main overlay backdrop */
+.image-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--overlay-bg);
+  z-index: var(--overlay-z);
+  cursor: crosshair;
+  user-select: none;
+}
+
+/* Canvas for image display */
+.image-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  z-index: var(--canvas-z);
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+/* Selection box during dragging */
+.selection-box {
+  position: absolute;
+  border: var(--selection-border-width) solid var(--selection-border-color);
+  background-color: var(--selection-bg-color);
+  pointer-events: none;
+  z-index: calc(var(--canvas-z) + 1);
+}
+
+/* Instructions overlay */
+.overlay-instructions {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--instruction-bg);
+  color: var(--instruction-text);
+  padding: 20px 30px;
+  border-radius: 8px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  text-align: center;
+  z-index: calc(var(--canvas-z) + 2);
+  pointer-events: none;
+  max-width: 90vw;
+  backdrop-filter: blur(4px);
+}
+
+.overlay-instructions__title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: var(--instruction-title);
+}
+
+.overlay-instructions__text {
+  margin: 0;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+/* Cancel button */
+.overlay-cancel-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: var(--cancel-btn-bg);
+  color: var(--cancel-btn-text);
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  z-index: calc(var(--canvas-z) + 2);
+  transition: background-color 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.overlay-cancel-btn:hover {
+  background-color: var(--cancel-btn-bg-hover);
+}
+
+.overlay-cancel-btn:active {
+  transform: scale(0.98);
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --overlay-bg: var(--overlay-bg-dark);
+    --instruction-bg: var(--instruction-bg-dark);
+  }
+  
+  .overlay-instructions {
+    border: 1px solid hsla(0, 0%, 100%, 0.1);
+  }
+}
+
+/* Light mode adjustments */
+@media (prefers-color-scheme: light) {
+  :root {
+    --overlay-bg: var(--overlay-bg-light);
+    --instruction-bg: var(--instruction-bg-light);
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .selection-box {
+    border: 3px solid hsl(0, 0%, 100%);
+    background-color: hsla(0, 0%, 100%, 0.2);
+  }
+  
+  .overlay-instructions {
+    border: 2px solid hsl(0, 0%, 100%);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .overlay-cancel-btn {
+    transition: none;
+  }
+  
+  .overlay-cancel-btn:active {
+    transform: none;
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .overlay-instructions {
+    padding: 15px 20px;
+    font-size: 14px;
+  }
+  
+  .overlay-instructions__title {
+    font-size: 16px;
+  }
+  
+  .overlay-cancel-btn {
+    top: 10px;
+    right: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}

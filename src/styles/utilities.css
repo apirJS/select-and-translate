@@ -1,0 +1,299 @@
+/* ==========================================================================
+  SHARED UTILITY STYLES
+  ========================================================================== */
+
+/* Utility classes for common patterns */
+
+/* Layout utilities */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-row {
+  flex-direction: row;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-sm {
+  gap: 8px;
+}
+
+.gap-md {
+  gap: 12px;
+}
+
+.gap-lg {
+  gap: 16px;
+}
+
+/* Positioning utilities */
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.fixed {
+  position: fixed;
+}
+
+.inset-0 {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+/* Sizing utilities */
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.max-w-sm {
+  max-width: 300px;
+}
+
+.max-w-md {
+  max-width: 400px;
+}
+
+.max-w-lg {
+  max-width: 500px;
+}
+
+/* Spacing utilities */
+.p-sm {
+  padding: 8px;
+}
+
+.p-md {
+  padding: 12px;
+}
+
+.p-lg {
+  padding: 16px;
+}
+
+.m-0 {
+  margin: 0;
+}
+
+/* Text utilities */
+.text-sm {
+  font-size: 14px;
+}
+
+.text-md {
+  font-size: 16px;
+}
+
+.text-lg {
+  font-size: 18px;
+}
+
+.font-bold {
+  font-weight: bold;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.user-select-none {
+  user-select: none;
+}
+
+.user-select-text {
+  user-select: text;
+}
+
+/* Interaction utilities */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-move {
+  cursor: move;
+}
+
+.cursor-crosshair {
+  cursor: crosshair;
+}
+
+.pointer-events-none {
+  pointer-events: none;
+}
+
+.pointer-events-auto {
+  pointer-events: auto;
+}
+
+/* Visibility utilities */
+.opacity-0 {
+  opacity: 0;
+}
+
+.opacity-50 {
+  opacity: 0.5;
+}
+
+.opacity-100 {
+  opacity: 1;
+}
+
+.invisible {
+  visibility: hidden;
+}
+
+.visible {
+  visibility: visible;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Border utilities */
+.border {
+  border: 1px solid var(--border-color);
+}
+
+.border-0 {
+  border: none;
+}
+
+.rounded {
+  border-radius: 4px;
+}
+
+.rounded-md {
+  border-radius: 6px;
+}
+
+.rounded-lg {
+  border-radius: 8px;
+}
+
+.rounded-full {
+  border-radius: 50%;
+}
+
+/* Background utilities */
+.bg-transparent {
+  background-color: transparent;
+}
+
+.bg-primary {
+  background-color: var(--accent-color);
+}
+
+.bg-surface {
+  background-color: var(--bg-color);
+}
+
+/* Shadow utilities */
+.shadow-sm {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-md {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Transition utilities */
+.transition {
+  transition: all 0.2s ease;
+}
+
+.transition-fast {
+  transition: all 0.1s ease;
+}
+
+.transition-slow {
+  transition: all 0.3s ease;
+}
+
+/* Z-index utilities */
+.z-overlay {
+  z-index: var(--overlay-z, 999997);
+}
+
+.z-modal {
+  z-index: var(--modal-z, 999999);
+}
+
+.z-toast {
+  z-index: var(--toast-z, 999999);
+}
+
+/* Scrollbar utilities */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-color);
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+/* Accessibility utilities */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus utilities */
+.focus-visible:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}

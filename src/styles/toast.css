@@ -1,0 +1,159 @@
+/* ==========================================================================
+  LOADING TOAST COMPONENT STYLES - HSL Color System
+  ========================================================================== */
+
+:root {
+  /* Toast specific variables - uses global color system */
+  --toast-bg: var(--toast-bg-light);
+  --toast-text: var(--color-white);  /* Explicit white text for contrast */
+  --toast-padding: 12px 20px;
+  --toast-border-radius: 6px;
+  --toast-shadow: var(--toast-shadow);
+  --toast-gap: 12px;
+  --toast-font-size: 14px;
+  --toast-z: var(--z-toast);
+  --toast-transition-duration: 300ms;
+  --toast-transition-easing: ease-out;
+  
+  /* Toast icon colors using HSL system */
+  --toast-success-bg: var(--toast-success);
+  --toast-error-bg: var(--toast-error);
+  --toast-spinner-border: hsla(0, 0%, 100%, 0.3);
+  --toast-spinner-active: var(--color-white);
+}
+
+/* Main toast container */
+.loading-toast {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background-color: var(--toast-bg);
+  box-shadow: var(--toast-shadow);
+  color: var(--toast-text);
+  padding: var(--toast-padding);
+  border-radius: var(--toast-border-radius);
+  z-index: var(--toast-z);
+  display: flex;
+  align-items: center;
+  gap: var(--toast-gap);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: var(--toast-font-size);
+  transform: translateY(-100px);
+  opacity: 0;
+  transition: 
+    transform var(--toast-transition-duration) var(--toast-transition-easing),
+    opacity var(--toast-transition-duration) var(--toast-transition-easing);
+  pointer-events: none;
+}
+
+/* Toast animation states */
+.loading-toast.toast-visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.loading-toast.toast-hidden {
+  transform: translateY(-100px);
+  opacity: 0;
+}
+
+/* Toast content */
+.loading-toast__message {
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Status icons container */
+.loading-toast__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Loading spinner */
+.loading-toast__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--toast-spinner-border);
+  border-radius: 50%;
+  border-top-color: var(--toast-spinner-active);
+  animation: toast-spin 1s linear infinite;
+  box-sizing: border-box; /* Ensures perfect circle with border */
+  flex-shrink: 0; /* Prevents compression */
+}
+
+/* Success icon */
+.loading-toast__icon--success {
+  background-color: var(--toast-success-bg);
+  color: var(--color-white);
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.loading-toast__icon--success::before {
+  content: '✓';
+}
+
+/* Error icon */
+.loading-toast__icon--error {
+  background-color: var(--toast-error-bg);
+  color: var(--color-white);
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.loading-toast__icon--error::before {
+  content: '✕';
+}
+
+/* Spinner animation */
+@keyframes toast-spin {
+  0% { 
+    transform: rotate(0deg); 
+  }
+  100% { 
+    transform: rotate(360deg); 
+  }
+}
+
+/* Dark mode adjustments - inherits from global color system */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --toast-bg: var(--toast-bg-dark);
+    --toast-text: var(--color-white); /* Ensure white text in dark mode */
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .loading-toast {
+    border: 2px solid var(--toast-text);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .loading-toast {
+    transition: opacity var(--toast-transition-duration) var(--toast-transition-easing);
+    transform: none;
+  }
+  
+  .loading-toast.toast-visible {
+    transform: none;
+  }
+  
+  .loading-toast.toast-hidden {
+    transform: none;
+  }
+  
+  .loading-toast__spinner {
+    animation: none;
+    border: 2px solid var(--toast-spinner-border);
+    border-top-color: var(--toast-spinner-active);
+    box-sizing: border-box; /* Maintain perfect circle even when static */
+  }
+}

@@ -1,0 +1,161 @@
+/* ==========================================================================
+  GLOBAL COLOR SYSTEM - HSL-Based Color Management
+  ========================================================================== */
+
+:root {
+  /* Base color palette using HSL */
+  
+  /* Neutral colors (grays, blacks, whites) */
+  --color-white: hsl(0, 0%, 100%);
+  --color-black: hsl(0, 0%, 0%);
+  --color-gray-50: hsl(0, 0%, 98%);
+  --color-gray-100: hsl(0, 0%, 96%);
+  --color-gray-200: hsl(0, 0%, 90%);
+  --color-gray-300: hsl(0, 0%, 83%);
+  --color-gray-400: hsl(0, 0%, 64%);
+  --color-gray-500: hsl(0, 0%, 45%);
+  --color-gray-600: hsl(0, 0%, 32%);
+  --color-gray-700: hsl(0, 0%, 25%);
+  --color-gray-800: hsl(0, 0%, 15%);
+  --color-gray-900: hsl(0, 0%, 9%);
+  --color-gray-950: hsl(0, 0%, 4%);
+
+  /* Brand colors */
+  --color-primary: hsl(210, 100%, 42%);        /* Blue primary */
+  --color-primary-light: hsl(207, 69%, 55%);   /* Lighter blue */
+  --color-primary-dark: hsl(213, 100%, 35%);   /* Darker blue */
+
+  /* Status colors */
+  --color-success: hsl(142, 71%, 45%);         /* Green */
+  --color-success-light: hsl(142, 71%, 55%);   /* Light green */
+  --color-success-dark: hsl(142, 71%, 35%);    /* Dark green */
+  
+  --color-error: hsl(0, 84%, 60%);             /* Red */
+  --color-error-light: hsl(0, 84%, 70%);       /* Light red */
+  --color-error-dark: hsl(0, 84%, 50%);        /* Dark red */
+  
+  --color-warning: hsl(38, 92%, 50%);          /* Orange/Yellow */
+  --color-warning-light: hsl(38, 92%, 60%);    /* Light orange */
+  --color-warning-dark: hsl(38, 92%, 40%);     /* Dark orange */
+
+  /* Overlay and backdrop colors */
+  --color-overlay-light: hsla(0, 0%, 0%, 0.5);
+  --color-overlay-dark: hsla(0, 0%, 0%, 0.7);
+  --color-backdrop: hsla(0, 0%, 0%, 0.3);
+
+  /* Light mode semantic colors */
+  --bg-color-light: var(--color-gray-50);
+  --text-color-light: var(--color-gray-800);
+  --border-color-light: var(--color-gray-300);
+  --hover-color-light: var(--color-gray-100);
+  --focus-color-light: var(--color-primary);
+  --shadow-color-light: hsla(0, 0%, 0%, 0.15);
+
+  /* Dark mode semantic colors */
+  --bg-color-dark: var(--color-gray-900);
+  --text-color-dark: var(--color-gray-100);
+  --border-color-dark: var(--color-gray-700);
+  --hover-color-dark: var(--color-gray-800);
+  --focus-color-dark: var(--color-primary-light);
+  --shadow-color-dark: hsla(0, 0%, 0%, 0.3);
+
+  /* Default semantic colors (light mode by default) */
+  --bg-color: var(--bg-color-light);
+  --text-color: var(--text-color-light);
+  --border-color: var(--border-color-light);
+  --hover-color: var(--hover-color-light);
+  --focus-color: var(--focus-color-light);
+  --shadow-color: var(--shadow-color-light);
+  --accent-color: var(--color-primary);
+
+  /* Component-specific color tokens */
+  
+  /* Modal colors */
+  --modal-bg: var(--bg-color);
+  --modal-text: var(--text-color);
+  --modal-border: var(--border-color);
+  --modal-shadow: 0 4px 12px var(--shadow-color);
+  --modal-backdrop: var(--color-backdrop);
+
+  /* Toast colors */
+  --toast-bg-light: hsla(0, 0%, 16%, 0.9);
+  --toast-bg-dark: hsla(0, 0%, 20%, 0.95);
+  --toast-text: var(--color-white);
+  --toast-shadow: 0 4px 12px hsla(0, 0%, 0%, 0.2);
+  --toast-success: var(--color-success);
+  --toast-error: var(--color-error);
+
+  /* Overlay colors */
+  --overlay-bg: var(--color-overlay-light);
+  --selection-border: var(--color-primary);
+  --selection-bg: hsla(210, 100%, 42%, 0.1);
+
+  /* Z-index scale */
+  --z-overlay: 999997;
+  --z-backdrop: 999998;
+  --z-modal: 999999;
+  --z-toast: 999999;
+}
+
+/* Dark mode color scheme override */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: var(--bg-color-dark);
+    --text-color: var(--text-color-dark);
+    --border-color: var(--border-color-dark);
+    --hover-color: var(--hover-color-dark);
+    --focus-color: var(--focus-color-dark);
+    --shadow-color: var(--shadow-color-dark);
+    --accent-color: var(--color-primary-light);
+
+    /* Component overrides for dark mode */
+    --modal-bg: var(--bg-color-dark);
+    --modal-text: var(--text-color-dark);
+    --modal-border: var(--border-color-dark);
+    --modal-shadow: 0 4px 12px var(--shadow-color-dark);
+    --modal-backdrop: var(--color-overlay-dark);
+
+    --toast-bg-light: var(--toast-bg-dark);
+    
+    --overlay-bg: var(--color-overlay-dark);
+  }
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  :root {
+    --bg-color: var(--color-white);
+    --text-color: var(--color-black);
+    --border-color: var(--color-black);
+    --hover-color: var(--color-gray-200);
+    --focus-color: var(--color-black);
+    --accent-color: var(--color-black);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-color: var(--color-black);
+      --text-color: var(--color-white);
+      --border-color: var(--color-white);
+      --hover-color: var(--color-gray-800);
+      --focus-color: var(--color-white);
+      --accent-color: var(--color-white);
+    }
+  }
+}
+
+/* Utility classes for common color applications */
+.text-primary { color: var(--color-primary); }
+.text-success { color: var(--color-success); }
+.text-error { color: var(--color-error); }
+.text-warning { color: var(--color-warning); }
+
+.bg-primary { background-color: var(--color-primary); }
+.bg-success { background-color: var(--color-success); }
+.bg-error { background-color: var(--color-error); }
+.bg-warning { background-color: var(--color-warning); }
+
+.border-primary { border-color: var(--color-primary); }
+.border-success { border-color: var(--color-success); }
+.border-error { border-color: var(--color-error); }
+.border-warning { border-color: var(--color-warning); }
