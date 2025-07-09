@@ -250,3 +250,107 @@ select:focus {
    margin-top: 4px;
   }
 }
+
+/* ==========================================================================
+  THEME TOGGLER STYLES
+  ========================================================================== */
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.theme-toggle-container {
+  flex-shrink: 0;
+}
+
+.theme-toggler {
+  display: flex;
+  align-items: center;
+}
+
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 70px;
+  justify-content: center;
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--hover-color);
+  border-color: var(--accent-color);
+  transform: translateY(-1px);
+}
+
+.theme-toggle-btn:active {
+  transform: translateY(0);
+  background-color: var(--accent-color);
+  color: white;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.theme-toggle-btn:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+.theme-icon {
+  font-size: 14px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-icon svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  transition: transform 0.2s ease;
+}
+
+.theme-toggle-btn:hover .theme-icon svg {
+  transform: scale(1.1);
+}
+
+.theme-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+/* Theme transition animations */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Theme class overrides for manual theme selection */
+.theme-light {
+  --bg-color: var(--bg-color-light) !important;
+  --text-color: var(--text-color-light) !important;
+  --border-color: var(--border-color-light) !important;
+  --accent-color: var(--accent-color-light) !important;
+  --hover-color: var(--hover-color-light) !important;
+}
+
+.theme-dark {
+  --bg-color: var(--bg-color-dark) !important;
+  --text-color: var(--text-color-dark) !important;
+  --border-color: var(--border-color-dark) !important;
+  --accent-color: var(--accent-color-dark) !important;
+  --hover-color: var(--hover-color-dark) !important;
+}

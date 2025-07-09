@@ -1,6 +1,17 @@
 import * as browser from 'webextension-polyfill';
+import { initializeTheme, createThemeToggler } from './lib/dom/theme';
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // Initialize theme system
+  await initializeTheme();
+  
+  // Add theme toggler to the popup
+  const themeToggleContainer = document.getElementById('theme-toggle-container');
+  if (themeToggleContainer) {
+    const themeToggler = createThemeToggler();
+    themeToggleContainer.appendChild(themeToggler);
+  }
+
   const fromLangSelect = document.getElementById(
     'from-lang'
   ) as HTMLSelectElement;

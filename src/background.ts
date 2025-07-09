@@ -285,15 +285,38 @@ browser.commands.onCommand.addListener(async (command: string) => {
   }
 });
 
-browser.runtime.onMessage.addListener((message: unknown) => {
+browser.runtime.onMessage.addListener(async (message: unknown) => {
   const typedMessage = message as Message;
-  if (typedMessage.type === 'run-translation') {
-    return handleTranslation(
-      typedMessage.payload.fromLanguage,
-      typedMessage.payload.toLanguage
-    );
+  
+  switch (typedMessage.type) {
+    case 'run-translation':
+      return handleTranslation(
+        typedMessage.payload.fromLanguage,
+        typedMessage.payload.toLanguage
+      );
+      
+    case 'theme-changed':
+      // Broadcast theme changes to all content scripts
+      try {
+        const tabs = await browser.tabs.query({});
+        const promises = tabs.map(async (tab) => {
+          if (tab.id && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('moz-extension://')) {
+            try {
+              await browser.tabs.sendMessage(tab.id, typedMessage);
+            } catch (error) {
+              // Content script might not be loaded, ignore error
+            }
+          }
+        });
+        await Promise.allSettled(promises);
+      } catch (error) {
+        console.warn('Failed to broadcast theme change:', error);
+      }
+      return Promise.resolve(true);
+      
+    default:
+      return Promise.resolve(false);
   }
-  return Promise.resolve(false);
 });
 
 const contentScriptStates = new Map<number, 'loading' | 'ready' | 'error'>();

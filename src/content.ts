@@ -2,9 +2,13 @@ import { showModalToViewport } from './lib/dom/modal';
 import { hideLoadingToast } from './lib/dom/loadingToast';
 import { selectAndCropImage } from './lib/dom/overlay';
 import { Message } from './lib/types';
+import { applyThemeToDocument, initializeTheme } from './lib/dom/theme';
 
 import * as browser from 'webextension-polyfill';
 import { TypedError } from './lib/utils';
+
+// Initialize theme on content script load
+initializeTheme();
 
 browser.runtime.onMessage.addListener(async (message: unknown) => {
   const typedMessage = message as Message;
@@ -33,7 +37,25 @@ browser.runtime.onMessage.addListener(async (message: unknown) => {
 
       case 'translation-result':
         await hideLoadingToast('success');
-        showModalToViewport(typedMessage.payload);
+        await showModalToViewport(typedMessage.payload);
+        return;
+
+      case 'theme-changed':
+        // Apply theme changes to the content page
+        applyThemeToDocument(typedMessage.payload.theme);
+        
+        // Also update any existing modals
+        const existingModals = document.querySelectorAll('.translation-modal');
+        existingModals.forEach(modal => {
+          // Remove old theme classes
+          modal.classList.remove('theme-light', 'theme-dark');
+          // Add new theme class
+          modal.classList.add(`theme-${typedMessage.payload.theme}`);
+        });
+        
+        // Also apply to document root for fallback
+        document.documentElement.classList.remove('theme-light', 'theme-dark');
+        document.documentElement.classList.add(`theme-${typedMessage.payload.theme}`);
         return;
 
       case 'error':

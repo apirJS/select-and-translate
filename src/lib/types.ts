@@ -25,6 +25,13 @@ export type Message =
         fromLanguage: string;
         toLanguage: string;
       };
+    }
+  | {
+      type: 'theme-changed';
+      payload: {
+        mode: 'auto' | 'light' | 'dark';
+        theme: 'light' | 'dark';
+      };
     };
 
 export type TranslationResult = {

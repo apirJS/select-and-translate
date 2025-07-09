@@ -1,6 +1,7 @@
 import type { TranslationResult } from '../types';
 import { TypedError } from '../utils';
 import { injectComponentStyles } from './styleManager';
+import { getStoredThemeMode, resolveThemeMode } from './theme';
 import {
   createDiv,
   createButton,
@@ -149,12 +150,23 @@ export class TranslationModal {
   /**
    * Build the complete modal structure
    */
-  private buildModalStructure(): ModalComponents {
+  private async buildModalStructure(): Promise<ModalComponents> {
     // Create backdrop
     const backdrop = createDiv('translation-modal-backdrop');
 
     // Create main modal container
     const modal = createDiv('translation-modal');
+    
+    // Apply current theme to modal
+    try {
+      const currentMode = await getStoredThemeMode();
+      const resolvedTheme = resolveThemeMode(currentMode);
+      modal.classList.add(`theme-${resolvedTheme}`);
+    } catch (error) {
+      // Fallback to system theme if storage fails
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      modal.classList.add(`theme-${systemTheme}`);
+    }
 
     // Create header
     const header = createDiv('translation-modal__header');
@@ -263,7 +275,7 @@ export class TranslationModal {
   /**
    * Show the modal with animation and deduplication
    */
-  show(): void {
+  async show(): Promise<void> {
     try {
       const modalId = createModalId(this.data);
       
@@ -292,7 +304,7 @@ export class TranslationModal {
       // Mark as being created
       creatingModals.add(modalId);
       
-      const { modal, backdrop } = this.buildModalStructure();
+      const { modal, backdrop } = await this.buildModalStructure();
       
       // Set modal ID for deduplication
       modal.setAttribute('data-modal-id', modalId);
@@ -343,7 +355,7 @@ export class TranslationModal {
 /**
  * Convenience function to show modal (maintains backward compatibility)
  */
-export function showModalToViewport(data: TranslationResult): void {
+export async function showModalToViewport(data: TranslationResult): Promise<void> {
   const modal = new TranslationModal(data);
-  modal.show();
+  await modal.show();
 }
