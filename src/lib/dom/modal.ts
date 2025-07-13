@@ -1,5 +1,4 @@
 import type { TranslationResult } from '../types';
-import { TypedError } from '../utils';
 import { injectComponentStyles } from './styleManager';
 import { getStoredThemeMode, resolveThemeMode } from './theme';
 import {
@@ -13,6 +12,7 @@ import {
   appendChildren,
   removeElement,
 } from './domBuilder';
+import { ApplicationError } from '../errors';
 
 type Cleanup = () => void;
 
@@ -49,9 +49,6 @@ export class TranslationModal {
     injectComponentStyles('modal');
   }
 
-  /**
-   * Attach drag functionality to modal header
-   */
   private attachDragBehavior(header: HTMLElement, modal: HTMLDivElement): Cleanup {
     const handleMouseDown = (e: MouseEvent) => {
       if ((e.target as HTMLElement).tagName === 'BUTTON') return;
@@ -91,9 +88,6 @@ export class TranslationModal {
     };
   }
 
-  /**
-   * Create a text section (original or translated)
-   */
   private createTextSection(
     title: string,
     content: string,
@@ -109,9 +103,6 @@ export class TranslationModal {
     return section;
   }
 
-  /**
-   * Create a copy button with click handling
-   */
   private createCopyButton(label: string, payload: string): HTMLButtonElement {
     const button = createButton(
       'translation-modal__copy-btn',
@@ -125,9 +116,6 @@ export class TranslationModal {
     return button;
   }
 
-  /**
-   * Handle copy action with feedback
-   */
   private handleCopyAction(button: HTMLButtonElement, text: string, originalLabel: string): void {
     navigator.clipboard.writeText(text).then(() => {
       const originalWidth = button.offsetWidth;
@@ -147,14 +135,9 @@ export class TranslationModal {
     });
   }
 
-  /**
-   * Build the complete modal structure
-   */
-  private async buildModalStructure(): Promise<ModalComponents> {
-    // Create backdrop
-    const backdrop = createDiv('translation-modal-backdrop');
 
-    // Create main modal container
+  private async buildModalStructure(): Promise<ModalComponents> {
+    const backdrop = createDiv('translation-modal-backdrop');
     const modal = createDiv('translation-modal');
     
     // Apply current theme to modal
@@ -163,12 +146,10 @@ export class TranslationModal {
       const resolvedTheme = resolveThemeMode(currentMode);
       modal.classList.add(`theme-${resolvedTheme}`);
     } catch (error) {
-      // Fallback to system theme if storage fails
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       modal.classList.add(`theme-${systemTheme}`);
     }
 
-    // Create header
     const header = createDiv('translation-modal__header');
     const title = createSpan('translation-modal__title', 'Translation');
     const closeBtn = createButton(
@@ -184,15 +165,14 @@ export class TranslationModal {
 
     // Create content area
     const content = createDiv('translation-modal__content');
-    
+
     const originalSection = this.createTextSection(
       'Original Text',
       this.data.originalText,
       'original-text-content'
     );
-    
     const divider = createDiv('translation-modal__divider');
-    
+
     const translatedSection = this.createTextSection(
       'Translated Text',
       this.data.translatedText,
@@ -211,7 +191,6 @@ export class TranslationModal {
     // Assemble modal
     appendChildren(modal, header, content, footer);
 
-    // Attach drag behavior
     const detachDrag = this.attachDragBehavior(header, modal);
 
     // Setup backdrop click to close
@@ -243,9 +222,6 @@ export class TranslationModal {
     return { modal, backdrop, cleanup };
   }
 
-  /**
-   * Animate modal closing
-   */
   private animateClose(modal: HTMLDivElement, backdrop: HTMLDivElement): void {
     addClasses(modal, 'modal-exiting');
     
@@ -255,9 +231,6 @@ export class TranslationModal {
     }, 300);
   }
 
-  /**
-   * Setup mutation observer to clean up backdrop if modal is removed
-   */
   private setupRemovalObserver(modal: HTMLDivElement, backdrop: HTMLDivElement): void {
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
@@ -272,9 +245,6 @@ export class TranslationModal {
     observer.observe(document.body, { childList: true });
   }
 
-  /**
-   * Show the modal with animation and deduplication
-   */
   async show(): Promise<void> {
     try {
       const modalId = createModalId(this.data);
@@ -326,17 +296,14 @@ export class TranslationModal {
       
     } catch (err) {
       const modalId = createModalId(this.data);
-      creatingModals.delete(modalId); // Clean up on error
-      throw new TypedError(
-        'DOMPopupError',
+      creatingModals.delete(modalId); 
+      throw new ApplicationError(
+        'system',
         `Failed to create popup: ${err instanceof Error ? err.message : String(err)}`
       );
     }
   }
 
-  /**
-   * Close the modal
-   */
   close(): void {
     if (this.cleanup) {
       this.cleanup();
@@ -344,17 +311,11 @@ export class TranslationModal {
     }
   }
 
-  /**
-   * Check if modal is currently open
-   */
   isOpen(): boolean {
     return this.modal !== null && document.contains(this.modal);
   }
 }
 
-/**
- * Convenience function to show modal (maintains backward compatibility)
- */
 export async function showModalToViewport(data: TranslationResult): Promise<void> {
   const modal = new TranslationModal(data);
   await modal.show();

@@ -1,0 +1,1 @@
+export { BrowserAdapter } from './browser';

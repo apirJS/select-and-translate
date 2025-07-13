@@ -1,5 +1,5 @@
-import { Rectangle } from '../types';
-import { TypedError } from '../utils';
+import { Rectangle, validateRectangle } from '../types';
+import { ApplicationError } from '../errors';
 import {
   CANVAS_ID,
   MAXIMUM_Z_INDEX,
@@ -13,8 +13,15 @@ import {
   hideScrollbars,
   restoreScrollbars,
 } from './misc';
+import {
+  validateCanvas,
+  validateContext2D,
+  validateImageDataUrl,
+  validateCoordinates,
+  validateDimensions,
+} from './validation';
 
-function existingCanvasAndOverlayCleanup() {
+export function existingCanvasAndOverlayCleanup() {
   detachCanvasFromViewport();
   detachOverlayFromViewport();
 }
@@ -24,22 +31,36 @@ async function createCanvas(
 ): Promise<[HTMLCanvasElement, CanvasRenderingContext2D]> {
   return new Promise<[HTMLCanvasElement, CanvasRenderingContext2D]>(
     (resolve, reject) => {
-      const canvas = createElement('canvas');
-      canvas.id = id;
+      try {
+        const canvas = createElement('canvas');
+        canvas.id = id;
 
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
+        const validatedCanvas = validateCanvas(canvas);
+        const ctx = validatedCanvas.getContext('2d');
+
+        if (!ctx) {
+          reject(
+            new ApplicationError(
+              'system',
+              "Canvas 2D context is not available. This may occur if your browser doesn't support canvas or has disabled it."
+            )
+          );
+          return;
+        }
+
+        const validatedContext = validateContext2D(ctx);
+
+        resolve([validatedCanvas, validatedContext]);
+      } catch (error) {
         reject(
-          new TypedError(
-            'DOMCanvasError',
-            "Canvas 2D context is not available. This may occur if your browser doesn't support canvas or has disabled it."
+          new ApplicationError(
+            'system',
+            `Failed to create canvas: ${
+              error instanceof Error ? error.message : String(error)
+            }`
           )
         );
-        return;
       }
-
-      resolve([canvas, ctx]);
-      return;
     }
   );
 }
@@ -50,6 +71,8 @@ export async function loadImageOntoCanvas(
   existingCanvasAndOverlayCleanup();
 
   try {
+    const validatedImageDataUrl = validateImageDataUrl(imageDataUrl);
+
     const [canvas, ctx] = await createCanvas();
     const img = new Image();
 
@@ -57,10 +80,15 @@ export async function loadImageOntoCanvas(
       (resolve, reject) => {
         img.onload = () => {
           try {
-            canvas.width = img.width;
-            canvas.height = img.height;
+            const dimensions = validateDimensions({
+              width: img.width,
+              height: img.height,
+            });
 
-            ctx.drawImage(img, 0, 0, img.width, img.height);
+            canvas.width = dimensions.width;
+            canvas.height = dimensions.height;
+
+            ctx.drawImage(img, 0, 0, dimensions.width, dimensions.height);
 
             applyStyles(canvas, {
               position: 'fixed',
@@ -84,14 +112,14 @@ export async function loadImageOntoCanvas(
         img.onerror = () => {
           existingCanvasAndOverlayCleanup();
           reject(
-            new TypedError(
-              'DOMCanvasError',
+            new ApplicationError(
+              'system',
               'Failed to load image, try to refresh the page. This might be due to content security policy restrictions or an invalid image format.'
             )
           );
         };
 
-        img.src = imageDataUrl;
+        img.src = validatedImageDataUrl;
       }
     );
   } catch (error) {
@@ -104,27 +132,35 @@ export async function selectAndCropImage(
   imageDataUrl: string
 ): Promise<HTMLCanvasElement> {
   try {
+    console.log('Starting selection process');
+    existingCanvasAndOverlayCleanup();
+
     const scrollX = window.scrollX;
     const scrollY = window.scrollY;
     const [canvas, ctx] = await loadImageOntoCanvas(imageDataUrl);
     appendOverlayToViewport();
 
     const rectangle = await applyEventListenerToOverlay(scrollX, scrollY);
+    const validatedRectangle = validateRectangle(rectangle);
+
     const scaleX = ctx.canvas.width / window.innerWidth;
     const scaleY = ctx.canvas.height / window.innerHeight;
 
     const scaledRectangle = {
-      x: rectangle.x * scaleX,
-      y: rectangle.y * scaleY,
-      width: rectangle.width * scaleX,
-      height: rectangle.height * scaleY,
+      x: validatedRectangle.x * scaleX,
+      y: validatedRectangle.y * scaleY,
+      width: validatedRectangle.width * scaleX,
+      height: validatedRectangle.height * scaleY,
     };
 
-    const result = await cropCanvas(canvas, scaledRectangle);
+    const validatedScaledRectangle = validateRectangle(scaledRectangle);
+    const result = await cropCanvas(canvas, validatedScaledRectangle);
+
     window.scrollTo(scrollX, scrollY);
 
     return result;
   } catch (error) {
+    console.log('Selection process failed, cleaning up');
     existingCanvasAndOverlayCleanup();
     throw error;
   }
@@ -140,8 +176,8 @@ function detachCanvasFromViewport() {
     const anyCanvases = document.querySelectorAll(`canvas[id^="${CANVAS_ID}"]`);
     anyCanvases.forEach((element) => element.remove());
   } catch (error) {
-    throw new TypedError(
-      'DOMCanvasError',
+    throw new ApplicationError(
+      'system',
       `Failed to remove canvas, try to refresh the page: ${
         error instanceof Error ? error.message : String(error)
       }`
@@ -151,20 +187,54 @@ function detachCanvasFromViewport() {
 
 function detachOverlayFromViewport() {
   try {
+    // Remove by ID first
     const overlay = document.getElementById(OVERLAY_ID);
-    if (overlay && document.body.contains(overlay)) {
-      document.body.removeChild(overlay);
+    if (overlay && overlay.parentNode) {
+      overlay.parentNode.removeChild(overlay);
     }
 
+    // Remove any overlays that might have the wrong ID
     const anyOverlays = document.querySelectorAll(`div[id^="${OVERLAY_ID}"]`);
-    anyOverlays.forEach((element) => element.remove());
+    anyOverlays.forEach((element) => {
+      if (element && element.parentNode) {
+        element.parentNode.removeChild(element);
+      }
+    });
+
+    // Remove by class name (more reliable)
+    const classNameOverlays = document.querySelectorAll(
+      '.select-and-translate-overlay'
+    );
+    classNameOverlays.forEach((element) => {
+      if (element && element.parentNode) {
+        element.parentNode.removeChild(element);
+      }
+    });
+
+    // Fallback: remove by style characteristics (for any that got through)
+    const styleBasedOverlays = document.querySelectorAll(`
+      div[style*="rgba(0,0,0,0.5)"],
+      div[style*="rgba(0, 0, 0, 0.5)"],
+      div[style*="position: fixed"][style*="background-color: rgba(0"]
+    `);
+    styleBasedOverlays.forEach((element) => {
+      // Only remove if it looks like our overlay (has the right styles)
+      const computedStyle = window.getComputedStyle(element);
+      if (
+        computedStyle.position === 'fixed' &&
+        computedStyle.backgroundColor.includes('rgba(0, 0, 0, 0.5)') &&
+        element.parentNode
+      ) {
+        element.parentNode.removeChild(element);
+      }
+    });
 
     restoreScrollbars();
   } catch (error) {
     restoreScrollbars();
 
-    throw new TypedError(
-      'DOMOverlayError',
+    throw new ApplicationError(
+      'system',
       `Failed to remove overlay, try to refresh the page: ${
         error instanceof Error ? error.message : String(error)
       }`
@@ -174,7 +244,13 @@ function detachOverlayFromViewport() {
 
 function appendOverlayToViewport() {
   try {
-    detachOverlayFromViewport();
+    // Check if an overlay already exists - if so, reuse it for multiple selection processes
+    const existingOverlay = document.getElementById(OVERLAY_ID);
+    if (existingOverlay) {
+      console.log('Overlay already exists, reusing for new selection process');
+      return;
+    }
+
     hideScrollbars();
 
     const overlay = createElement('div', {
@@ -191,10 +267,13 @@ function appendOverlayToViewport() {
     });
     overlay.id = OVERLAY_ID;
 
+    // Add a unique class to help with future cleanup
+    overlay.classList.add('select-and-translate-overlay');
+
     document.body.appendChild(overlay);
   } catch (error) {
-    throw new TypedError(
-      'DOMOverlayError',
+    throw new ApplicationError(
+      'system',
       `Failed to append the overlay to viewport: ${
         error instanceof Error ? error.message : String(error)
       }`
@@ -210,8 +289,8 @@ function applyEventListenerToOverlay(
     const overlay = document.getElementById(OVERLAY_ID);
     if (overlay === null) {
       reject(
-        new TypedError(
-          'DOMElementMissingError',
+        new ApplicationError(
+          'system',
           'Overlay element not found in the document'
         )
       );
@@ -224,8 +303,8 @@ function applyEventListenerToOverlay(
       if (!isCleanedUp) {
         cleanup();
         reject(
-          new TypedError(
-            'TimeoutReached',
+          new ApplicationError(
+            'user_cancelled',
             `Selection timed out after ${
               SELECTION_TIMEOUT / 60000
             } minutes of inactivity`
@@ -248,10 +327,10 @@ function applyEventListenerToOverlay(
       isCleanedUp = true;
     };
 
-    const onEscape = (e: KeyboardEvent) => {
+    const onEscape = async (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         cleanup();
-        reject(new TypedError('UserEscapeKeyPressed', 'Action canceled'));
+        reject(new ApplicationError('user_cancelled', 'Action canceled'));
         return;
       }
     };
@@ -298,8 +377,8 @@ function applyEventListenerToOverlay(
           } catch (error) {
             cleanup();
             reject(
-              new TypedError(
-                'DOMEventListenerError',
+              new ApplicationError(
+                'system',
                 `Error during mouse move: ${
                   error instanceof Error ? error.message : String(error)
                 }`
@@ -316,7 +395,12 @@ function applyEventListenerToOverlay(
             const rect = selectionBox.getBoundingClientRect();
             if (rect.width === 0 || rect.height === 0) {
               cleanup();
-              reject(new Error('Invalid selection area'));
+              reject(
+                new ApplicationError('user_cancelled', 'Selection cancelled', {
+                  shouldNotify: false,
+                  technical: 'Selection area has zero width or height',
+                })
+              );
               return;
             }
 
@@ -324,11 +408,19 @@ function applyEventListenerToOverlay(
             overlay.removeEventListener('pointermove', onMouseMove);
             window.removeEventListener('blur', handleWindowBlur);
 
-            const rectangle = {
+            const coordinates = validateCoordinates({
               x: rect.left,
               y: rect.top,
+            });
+
+            const dimensions = validateDimensions({
               width: rect.width,
               height: rect.height,
+            });
+
+            const rectangle = {
+              ...coordinates,
+              ...dimensions,
             };
 
             showLoadingToast();
@@ -338,8 +430,8 @@ function applyEventListenerToOverlay(
           } catch (error) {
             cleanup();
             reject(
-              new TypedError(
-                'DOMEventListenerError',
+              new ApplicationError(
+                'system',
                 `Error finalizing selection: ${
                   error instanceof Error ? error.message : String(error)
                 }`
@@ -356,8 +448,8 @@ function applyEventListenerToOverlay(
       } catch (error) {
         cleanup();
         reject(
-          new TypedError(
-            'DOMEventListenerError',
+          new ApplicationError(
+            'system',
             `Error initializing selection: ${
               error instanceof Error ? error.message : String(error)
             }`
@@ -386,7 +478,6 @@ function cropCanvas(
 ): Promise<HTMLCanvasElement> {
   return new Promise((resolve, reject) => {
     try {
-      // Validate crop rectangle bounds
       const isOutOfBounds =
         rectangle.x < 0 ||
         rectangle.y < 0 ||
@@ -394,10 +485,12 @@ function cropCanvas(
         rectangle.y + rectangle.height > canvas.height;
 
       if (isOutOfBounds) {
-        reject(
-          new TypedError('SelectionBoxError', 'Image do not have proper size')
+        return reject(
+          new ApplicationError('validation', 'Selection area is invalid', {
+            shouldNotify: false,
+            technical: 'Selection rectangle is out of canvas bounds',
+          })
         );
-        return;
       }
 
       const croppedCanvas = createElement('canvas');
@@ -407,7 +500,7 @@ function cropCanvas(
       const ctx = croppedCanvas.getContext('2d');
       if (!ctx) {
         return reject(
-          new TypedError('DOMCanvasError', 'Canvas context not available')
+          new ApplicationError('system', 'Canvas context not available')
         );
       }
 
@@ -427,8 +520,8 @@ function cropCanvas(
       return;
     } catch (error) {
       reject(
-        new TypedError(
-          'DOMCanvasError',
+        new ApplicationError(
+          'system',
           `Failed to crop canvas: ${
             error instanceof Error ? error.message : String(error)
           }`
@@ -438,3 +531,4 @@ function cropCanvas(
     }
   });
 }
+
