@@ -1,97 +1,124 @@
 # Select and Translate
 
-A browser extension that lets you select an area on your screen, extract text from it, and translate it instantly to your preferred language.
+A browser extension that allows you to select any area on your screen, extract text from it, and translate it instantly to your preferred language.
 
 ## Demo
 ![Select and Translate Demo](demo/select-and-translate.gif)
 
 ## Features
 
-- 📸 **Area Selection**: Drag to select any area on your screen that contains text
-- 🔍 **Text Extraction**: Automatically extracts text from the selected area
-- 🌐 **Translation**: Translates the extracted text to your chosen language
-- 💬 **Languages**: Support for major languages including English, Spanish, Chinese, and many more
-- 🌓 **Light/Dark Mode**: Automatically adapts to your browser's theme settings
-- ⌨️ **Keyboard Shortcut**: Quick access with Ctrl+Shift+Space
-- 📋 **Copy Text**: Easily copy original or translated text to clipboard
-- 🎈 **Lightweight**: Extension size smaller than 1MB
+- **Area Selection**: Select any region of your screen containing text
+- **Text Extraction**: Automatically extracts text from the selected area using OCR
+- **Instant Translation**: Translates extracted text to your chosen language
+- **Multi-language Support**: Supports major world languages including English, Spanish, Chinese, French, German, and many more
+- **Theme Adaptation**: Automatically adapts to your browser's light or dark mode
+- **Keyboard Shortcuts**: Quick access with customizable keyboard shortcuts (default: Ctrl+Shift+Space)
+- **Copy to Clipboard**: Copy both original and translated text with one click
+- **Lightweight**: Optimized for performance with minimal resource usage
 
 ## Installation
 
-### Chrome / Edge
+### Chrome and Edge
 
 1. Download the latest release from [GitHub Releases](https://github.com/apirJS/select-and-translate/releases)
-2. Open Chrome/Edge and navigate to `chrome://extensions` or `edge://extensions`
+2. Open your browser and navigate to `chrome://extensions` (Chrome) or `edge://extensions` (Edge)
 3. Enable "Developer mode" in the top right corner
 4. Drag and drop the downloaded .zip file into the browser window
-5. The extension should now be installed and visible in your toolbar
+5. The extension will be installed and appear in your toolbar
 
 ## Usage
 
-1. Click the extension icon in your browser toolbar or use the keyboard shortcut (Ctrl+Shift+Space by default)
-2. Drag to select the area containing the text you want to translate
-3. Wait a moment for the text to be extracted and translated
-4. A popup will appear showing both the original text and the translation
-5. Use the buttons at the bottom to copy either text to your clipboard
+### Basic Translation
 
-### Change Target Language
+1. Click the extension icon in your browser toolbar or use the keyboard shortcut (Ctrl+Shift+Space)
+2. Click and drag to select the area containing the text you want to translate
+3. Wait for the text extraction and translation to complete
+4. A modal will display both the original text and the translation
+5. Use the copy buttons to copy either text to your clipboard
 
-1. Click the extension icon in your toolbar to open the popup
-2. Select your desired target language from the dropdown menu
-3. Your selection will be automatically saved for future translations
+### Settings
 
-### Change Keyboard Shortcut
+**Change Target Language:**
+1. Click the extension icon to open the settings popup
+2. Select your preferred target language from the dropdown menu
+3. Your selection is automatically saved for future translations
 
-1. Click the "Change Shortcut" button in the extension popup
-2. Your browser's shortcut management page will open
-3. Find "Select and Translate" in the list and set your preferred keyboard shortcut
+**Customize Keyboard Shortcut:**
+1. Click "Change Shortcut" in the extension popup
+2. Your browser will open the extension shortcuts management page
+3. Find "Select and Translate" and set your preferred key combination
 
-## Privacy
+## Privacy and Security
 
-- All text processing is done through a secure API
-- No personal data is collected or stored
-- No browsing history is tracked
-- The extension only requests permissions necessary for its core functionality
+This extension prioritizes user privacy:
 
-## Technical Details
+- Text processing is handled through secure API endpoints
+- No personal data is collected, stored, or transmitted beyond translation requests
+- No browsing history or personal information is tracked
+- Minimal permissions are requested, only those necessary for core functionality
+- All data transmission is encrypted
 
-This extension uses:
+## Technical Information
 
-- Browser Extension API with Manifest V3
-- TypeScript for type safety
-- Vite for build tool
+**Built with:**
+- Manifest V3 browser extension standards
+- TypeScript for enhanced code reliability
+- Vite build system for optimized performance
+- Modern web APIs for cross-browser compatibility
 
 ## Troubleshooting
 
-### Keyboard shortcut doesn't work
-- Ensure the shortcut isn't already assigned to another extension or browser function
-- Try setting a different shortcut through the browser's extension shortcuts page
+**Keyboard shortcut not working:**
+- Verify the shortcut isn't assigned to another extension or browser function
+- Set a different shortcut through your browser's extension shortcuts page
+- Ensure the extension has necessary permissions
 
-### No text detected in the image
-- Make sure the selected area contains clear, readable text
-- Increase the selection size to include complete text blocks
+**Text extraction issues:**
+- Select areas with clear, readable text
+- Ensure adequate contrast between text and background
+- Try selecting larger areas that include complete text blocks
+- Avoid selecting areas with complex backgrounds or overlapping elements
 
-### Translation doesn't appear
-- Check your internet connection, as translation requires API access
-- Verify that you've given the extension necessary permissions
-- Try refreshing the page and attempting the translation again
+**Translation problems:**
+- Check your internet connection (translation requires online access)
+- Verify extension permissions are granted
+- Refresh the page and try again
+- Clear browser cache if issues persist
 
-## Contributing
+## Development
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+### Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Contributions are welcome. To contribute:
+
+1. Fork this repository
+2. Create a feature branch: `git checkout -b feature/your-feature-name`
+3. Make your changes and commit: `git commit -m 'Add your feature description'`
+4. Push to your branch: `git push origin feature/your-feature-name`
+5. Submit a pull request
+
+### Building from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/apirJS/select-and-translate.git
+
+# Install dependencies
+npm install
+
+# Build for development
+npm run build:dev
+
+# Build for production
+npm run build
+```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-- Built with the WebExtension API
-- Uses Gemini API
-- Made with ❤️ by Echa (apir)
+- Built using the WebExtension API
+- Powered by Gemini API for translation services
+- Developed by Echa (apir)
