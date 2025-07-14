@@ -59,6 +59,7 @@ export class TranslationService {
       return { fromLanguage: fromLang, toLanguage: toLang };
     }
 
+    await this.configService.refreshPreferences();
     return await this.configService.getLanguages();
   }
 

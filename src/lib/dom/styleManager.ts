@@ -4,7 +4,7 @@ import overlayStyles from '../../styles/overlay.css?raw';
 import utilitiesStyles from '../../styles/utilities.css?raw';
 import colorsStyles from '../../styles/colors.css?raw';
 
-export interface StyleManager {
+interface StyleManager {
   inject(): void;
   remove(): void;
   isInjected(): boolean;
@@ -45,41 +45,50 @@ class ComponentStyleManager implements StyleManager {
   }
 }
 
-// Create style managers for each component
-export const modalStyleManager = new ComponentStyleManager(
-  'select-translate-modal-styles',
-  modalStyles
-);
+export class StyleManagerFactory {
+  private static managers = new Map<string, ComponentStyleManager>();
 
-export const toastStyleManager = new ComponentStyleManager(
-  'select-translate-toast-styles',
-  toastStyles
-);
+  private static createManager(component: string, styles: string): ComponentStyleManager {
+    const id = `select-translate-${component}-styles`;
+    if (!this.managers.has(id)) {
+      this.managers.set(id, new ComponentStyleManager(id, styles));
+    }
+    return this.managers.get(id)!;
+  }
 
-export const overlayStyleManager = new ComponentStyleManager(
-  'select-translate-overlay-styles',
-  overlayStyles
-);
+  static getModalManager(): ComponentStyleManager {
+    return this.createManager('modal', modalStyles);
+  }
 
-export const colorsStyleManager = new ComponentStyleManager(
-  'select-translate-colors-styles',
-  colorsStyles
-);
+  static getToastManager(): ComponentStyleManager {
+    return this.createManager('toast', toastStyles);
+  }
 
-export const utilitiesStyleManager = new ComponentStyleManager(
-  'select-translate-utilities-styles',
-  utilitiesStyles
-);
+  static getOverlayManager(): ComponentStyleManager {
+    return this.createManager('overlay', overlayStyles);
+  }
 
-// Master style manager
+  static getColorsManager(): ComponentStyleManager {
+    return this.createManager('colors', colorsStyles);
+  }
+
+  static getUtilitiesManager(): ComponentStyleManager {
+    return this.createManager('utilities', utilitiesStyles);
+  }
+}
+
 export class MasterStyleManager {
-  private managers: StyleManager[] = [
-    colorsStyleManager,
-    utilitiesStyleManager,
-    modalStyleManager,
-    toastStyleManager,
-    overlayStyleManager,
-  ];
+  private managers: StyleManager[];
+
+  constructor() {
+    this.managers = [
+      StyleManagerFactory.getColorsManager(),
+      StyleManagerFactory.getUtilitiesManager(),
+      StyleManagerFactory.getModalManager(),
+      StyleManagerFactory.getToastManager(),
+      StyleManagerFactory.getOverlayManager(),
+    ];
+  }
 
   injectAll(): void {
     this.managers.forEach(manager => manager.inject());
@@ -91,16 +100,15 @@ export class MasterStyleManager {
 
   injectComponent(component: 'modal' | 'toast' | 'overlay' | 'utilities' | 'colors'): void {
     const managerMap = {
-      modal: modalStyleManager,
-      toast: toastStyleManager,
-      overlay: overlayStyleManager,
-      utilities: utilitiesStyleManager,
-      colors: colorsStyleManager,
+      modal: StyleManagerFactory.getModalManager(),
+      toast: StyleManagerFactory.getToastManager(),
+      overlay: StyleManagerFactory.getOverlayManager(),
+      utilities: StyleManagerFactory.getUtilitiesManager(),
+      colors: StyleManagerFactory.getColorsManager(),
     };
 
-    // Always inject colors and utilities first for base styles
-    colorsStyleManager.inject();
-    utilitiesStyleManager.inject();
+    StyleManagerFactory.getColorsManager().inject();
+    StyleManagerFactory.getUtilitiesManager().inject();
     managerMap[component].inject();
   }
 
@@ -109,14 +117,19 @@ export class MasterStyleManager {
   }
 }
 
-export const masterStyleManager = new MasterStyleManager();
+const masterStyleManager = new MasterStyleManager();
 
-// Utility function for one-off style injection
 export function injectComponentStyles(component: 'modal' | 'toast' | 'overlay' | 'utilities' | 'colors'): void {
   masterStyleManager.injectComponent(component);
 }
 
-// Global cleanup function
 export function cleanupAllStyles(): void {
   masterStyleManager.removeAll();
 }
+
+// Legacy exports for backward compatibility
+export const modalStyleManager = StyleManagerFactory.getModalManager();
+export const toastStyleManager = StyleManagerFactory.getToastManager();
+export const overlayStyleManager = StyleManagerFactory.getOverlayManager();
+export const colorsStyleManager = StyleManagerFactory.getColorsManager();
+export const utilitiesStyleManager = StyleManagerFactory.getUtilitiesManager();

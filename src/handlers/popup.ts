@@ -18,7 +18,9 @@ export class PopupController {
     this.messageService = MessageService.getInstance();
     this.errorService = ErrorService.getInstance();
 
-    this.fromLangSelect = document.getElementById('from-lang') as HTMLSelectElement;
+    this.fromLangSelect = document.getElementById(
+      'from-lang'
+    ) as HTMLSelectElement;
     this.toLangSelect = document.getElementById('to-lang') as HTMLSelectElement;
   }
 
@@ -39,17 +41,43 @@ export class PopupController {
       if (preferences.toLanguage) {
         this.toLangSelect.value = preferences.toLanguage;
       } else {
-        const browserLang = navigator.language || 'en-US';
-        this.toLangSelect.value = browserLang;
+        const defaultLang = this.getValidTargetLanguage();
+        this.toLangSelect.value = defaultLang;
       }
 
       if (this.toLangSelect.value === 'auto-detect') {
-        const browserLang = navigator.language || 'en-US';
-        this.toLangSelect.value = browserLang;
+        const defaultLang = this.getValidTargetLanguage();
+        this.toLangSelect.value = defaultLang;
       }
     } catch (error) {
-      this.errorService.handleError(error, 'PopupController.loadStoredPreferences');
+      this.errorService.handleError(
+        error,
+        'PopupController.loadStoredPreferences'
+      );
     }
+  }
+
+  private getValidTargetLanguage(): string {
+    const browserLang = navigator.language || 'en-US';
+    
+    if (this.isValidSelectOption(this.toLangSelect, browserLang)) {
+      return browserLang;
+    }
+    
+    const baseLang = browserLang.split('-')[0];
+    const availableOptions = Array.from(this.toLangSelect.options).map(option => option.value);
+    
+    const matchingOption = availableOptions.find(option => option.startsWith(baseLang + '-'));
+    if (matchingOption) {
+      return matchingOption;
+    }
+    
+    // fallback to English
+    return 'en-US';
+  }
+
+  private isValidSelectOption(selectElement: HTMLSelectElement, value: string): boolean {
+    return Array.from(selectElement.options).some(option => option.value === value);
   }
 
   private setupEventListeners(): void {
@@ -83,21 +111,28 @@ export class PopupController {
 
   private async handleLanguageChange(type: 'from' | 'to'): Promise<void> {
     try {
-      const value = type === 'from' ? this.fromLangSelect.value : this.toLangSelect.value;
-      
+      const value =
+        type === 'from' ? this.fromLangSelect.value : this.toLangSelect.value;
+
       if (type === 'from') {
         await this.configService.setPreferences({ fromLanguage: value });
       } else {
         await this.configService.setPreferences({ toLanguage: value });
       }
     } catch (error) {
-      this.errorService.handleError(error, 'PopupController.handleLanguageChange');
-      
+      console.log('[handleLanguageChange] Error dawg');
+      this.errorService.handleError(
+        error,
+        'PopupController.handleLanguageChange'
+      );
+
       if (type === 'from') {
         this.fromLangSelect.value = 'auto-detect';
-        await this.configService.setPreferences({ fromLanguage: 'auto-detect' });
+        await this.configService.setPreferences({
+          fromLanguage: 'auto-detect',
+        });
       } else {
-        const defaultLang = navigator.language || 'en-US';
+        const defaultLang = this.getValidTargetLanguage();
         this.toLangSelect.value = defaultLang;
         await this.configService.setPreferences({ toLanguage: defaultLang });
       }
@@ -117,7 +152,10 @@ export class PopupController {
       await this.messageService.sendToBackground(message);
       window.close();
     } catch (error) {
-      this.errorService.handleError(error, 'PopupController.handleRunTranslation');
+      this.errorService.handleError(
+        error,
+        'PopupController.handleRunTranslation'
+      );
     }
   }
 
@@ -125,14 +163,19 @@ export class PopupController {
     try {
       await this.tabService.openExtensionShortcuts();
     } catch (error) {
-      this.errorService.handleError(error, 'PopupController.handleOpenShortcuts');
+      this.errorService.handleError(
+        error,
+        'PopupController.handleOpenShortcuts'
+      );
     }
   }
 
   private async handleOpenGithub(e: Event): Promise<void> {
     e.preventDefault();
     try {
-      const browserAdapter = (await import('../adapters/browser')).BrowserAdapter.getInstance();
+      const browserAdapter = (
+        await import('../adapters/browser')
+      ).BrowserAdapter.getInstance();
       await browserAdapter.tabs.create({ url: 'https://github.com/apirJS' });
     } catch (error) {
       this.errorService.handleError(error, 'PopupController.handleOpenGithub');
@@ -140,6 +183,11 @@ export class PopupController {
   }
 
   private async validateAndSaveInitialSelections(): Promise<void> {
+    if (this.toLangSelect.value === 'auto-detect' || this.toLangSelect.value === '') {
+      const defaultLang = this.getValidTargetLanguage();
+      this.toLangSelect.value = defaultLang;
+    }
+    
     await this.handleLanguageChange('from');
     await this.handleLanguageChange('to');
   }

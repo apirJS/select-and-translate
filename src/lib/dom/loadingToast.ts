@@ -16,13 +16,9 @@ export class LoadingToast {
   private static instance: LoadingToast | null = null;
 
   constructor() {
-    // Inject styles when toast is created
     injectComponentStyles('toast');
   }
 
-  /**
-   * Get singleton instance
-   */
   static getInstance(): LoadingToast {
     if (!LoadingToast.instance) {
       LoadingToast.instance = new LoadingToast();
@@ -30,9 +26,6 @@ export class LoadingToast {
     return LoadingToast.instance;
   }
 
-  /**
-   * Create icon element based on status
-   */
   private createIcon(status: ToastStatus): HTMLDivElement {
     const icon = createDiv('loading-toast__icon');
 
@@ -52,9 +45,6 @@ export class LoadingToast {
     return icon;
   }
 
-  /**
-   * Create the toast structure
-   */
   private createToastStructure(message: string, status: ToastStatus): HTMLDivElement {
     const toast = createDiv('loading-toast');
     toast.id = 'select-translate-toast';
@@ -68,56 +58,40 @@ export class LoadingToast {
     return toast;
   }
 
-  /**
-   * Show toast with specified message and status
-   */
   show(message: string, status: ToastStatus = 'loading'): void {
-    // Remove existing toast if present
     this.hide();
 
-    // Create new toast
     this.toastElement = this.createToastStructure(message, status);
     document.body.appendChild(this.toastElement);
 
-    // Trigger animation
     requestAnimationFrame(() => {
       if (this.toastElement) {
         addClasses(this.toastElement, 'toast-visible');
       }
     });
 
-    // Auto-hide success/error toasts after 3 seconds
     if (status !== 'loading') {
-      this.timeoutId = window.setTimeout(() => {
-        this.hide();
-      }, 3000);
+      this.timeoutId = window.setTimeout(() => this.hide(), 3000);
     }
   }
 
-  /**
-   * Update existing toast status and message
-   */
   updateStatus(status: ToastStatus, message?: string): void {
     if (!this.toastElement || !isElementInDOM(this.toastElement)) {
-      // If no toast exists, create a new one
       this.show(message || this.getDefaultMessage(status), status);
       return;
     }
 
-    // Clear auto-hide timeout for loading state
     if (this.timeoutId) {
       clearTimeout(this.timeoutId);
       this.timeoutId = null;
     }
 
-    // Update icon
     const iconContainer = this.toastElement.querySelector('.loading-toast__icon');
     if (iconContainer) {
       const newIcon = this.createIcon(status);
       iconContainer.replaceWith(newIcon);
     }
 
-    // Update message if provided
     if (message) {
       const messageElement = this.toastElement.querySelector('.loading-toast__message');
       if (messageElement) {
@@ -125,42 +99,28 @@ export class LoadingToast {
       }
     }
 
-    // Auto-hide for success/error states
     if (status !== 'loading') {
-      this.timeoutId = window.setTimeout(() => {
-        this.hide();
-      }, 3000);
+      this.timeoutId = window.setTimeout(() => this.hide(), 3000);
     }
   }
 
-  /**
-   * Hide the toast with animation
-   */
   hide(): void {
     if (!this.toastElement) return;
 
-    // Clear timeout
     if (this.timeoutId) {
       clearTimeout(this.timeoutId);
       this.timeoutId = null;
     }
 
-    // Animate out
     removeClasses(this.toastElement, 'toast-visible');
     addClasses(this.toastElement, 'toast-hidden');
 
-    // Remove from DOM after animation
     const toastToRemove = this.toastElement;
     this.toastElement = null;
 
-    setTimeout(() => {
-      removeElement(toastToRemove);
-    }, 300);
+    setTimeout(() => removeElement(toastToRemove), 300);
   }
 
-  /**
-   * Get default message for status
-   */
   private getDefaultMessage(status: ToastStatus): string {
     switch (status) {
       case 'loading':
@@ -174,23 +134,16 @@ export class LoadingToast {
     }
   }
 
-  /**
-   * Check if toast is currently visible
-   */
   isVisible(): boolean {
     return this.toastElement !== null && isElementInDOM(this.toastElement);
   }
 
-  /**
-   * Force cleanup (useful for testing or manual cleanup)
-   */
   destroy(): void {
     this.hide();
     LoadingToast.instance = null;
   }
 }
 
-// Convenience functions for backward compatibility
 export function showLoadingToast(message: string = 'Translating...'): void {
   const toast = LoadingToast.getInstance();
   toast.show(message, 'loading');
@@ -204,13 +157,9 @@ export function hideLoadingToast(status: 'success' | 'failed' = 'success'): Prom
   }
 
   return new Promise((resolve) => {
-    // Update to final status, then hide after delay
     toast.updateStatus(status);
     
-    // Wait for the auto-hide to complete
-    setTimeout(() => {
-      resolve();
-    }, 3300); // 3000ms display + 300ms fade out
+    setTimeout(() => resolve(), 3300);
   });
 }
 

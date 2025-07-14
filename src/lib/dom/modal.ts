@@ -22,58 +22,58 @@ interface ModalComponents {
   cleanup: Cleanup;
 }
 
-// Global modal registry to prevent duplicates
-const modalRegistry = new Map<string, HTMLDivElement>();
-const creatingModals = new Set<string>();
-
-// Simple hash function for modal deduplication
-function createModalId(data: TranslationResult): string {
-  const content = `${data.originalText}|${data.translatedText}`;
-  let hash = 0;
-  for (let i = 0; i < content.length; i++) {
-    const char = content.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return `modal-${Math.abs(hash)}`;
+interface DragState {
+  isDragging: boolean;
+  offset: { x: number; y: number };
 }
 
 export class TranslationModal {
   private modal: HTMLDivElement | null = null;
   private cleanup: Cleanup | null = null;
-  private isDragging = false;
-  private dragOffset = { x: 0, y: 0 };
+  private dragState: DragState = { isDragging: false, offset: { x: 0, y: 0 } };
+  private static modalRegistry = new Map<string, HTMLDivElement>();
+  private static creatingModals = new Set<string>();
 
   constructor(private data: TranslationResult) {
-    // Inject styles when modal is created
     injectComponentStyles('modal');
   }
 
-  private attachDragBehavior(header: HTMLElement, modal: HTMLDivElement): Cleanup {
+  private static createModalId(data: TranslationResult): string {
+    const content = `${data.originalText}|${data.translatedText}`;
+    let hash = 0;
+    for (let i = 0; i < content.length; i++) {
+      const char = content.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return `modal-${Math.abs(hash)}`;
+  }
+
+  private setupDragBehavior(header: HTMLElement, modal: HTMLDivElement): Cleanup {
     const handleMouseDown = (e: MouseEvent) => {
       if ((e.target as HTMLElement).tagName === 'BUTTON') return;
       
-      this.isDragging = true;
+      this.dragState.isDragging = true;
       const rect = modal.getBoundingClientRect();
-      this.dragOffset.x = e.clientX - rect.left;
-      this.dragOffset.y = e.clientY - rect.top;
+      this.dragState.offset.x = e.clientX - rect.left;
+      this.dragState.offset.y = e.clientY - rect.top;
       
       addClasses(modal, 'is-dragging');
       e.stopPropagation();
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!this.isDragging) return;
+      if (!this.dragState.isDragging) return;
       
-      modal.style.left = `${e.clientX - this.dragOffset.x}px`;
-      modal.style.top = `${e.clientY - this.dragOffset.y}px`;
+      modal.style.left = `${e.clientX - this.dragState.offset.x}px`;
+      modal.style.top = `${e.clientY - this.dragState.offset.y}px`;
       modal.style.transform = 'none';
       
       e.preventDefault();
     };
 
     const handleMouseUp = () => {
-      this.isDragging = false;
+      this.dragState.isDragging = false;
       removeClasses(modal, 'is-dragging');
     };
 
@@ -88,18 +88,12 @@ export class TranslationModal {
     };
   }
 
-  private createTextSection(
-    title: string,
-    content: string,
-    contentClass: string
-  ): HTMLDivElement {
+  private createTextSection(title: string, content: string, contentClass: string): HTMLDivElement {
     const section = createDiv('translation-modal__section');
-    
     const titleElement = createHeading(3, 'translation-modal__section-title', title);
     const textContainer = createTextarea(`translation-modal__text-container ${contentClass}`, content, true);
     
     appendChildren(section, titleElement, textContainer);
-    
     return section;
   }
 
@@ -112,7 +106,6 @@ export class TranslationModal {
         this.handleCopyAction(button, payload, label);
       }
     );
-
     return button;
   }
 
@@ -127,7 +120,6 @@ export class TranslationModal {
         button.style.width = '';
       }, 2000);
     }).catch(() => {
-      // Fallback for browsers that don't support clipboard API
       button.textContent = '❌ Failed';
       setTimeout(() => {
         button.textContent = originalLabel;
@@ -135,12 +127,10 @@ export class TranslationModal {
     });
   }
 
-
   private async buildModalStructure(): Promise<ModalComponents> {
     const backdrop = createDiv('translation-modal-backdrop');
     const modal = createDiv('translation-modal');
     
-    // Apply current theme to modal
     try {
       const currentMode = await getStoredThemeMode();
       const resolvedTheme = resolveThemeMode(currentMode);
@@ -150,6 +140,37 @@ export class TranslationModal {
       modal.classList.add(`theme-${systemTheme}`);
     }
 
+    const header = this.createHeader();
+    const content = this.createContent();
+    const footer = this.createFooter();
+
+    appendChildren(modal, header, content, footer);
+
+    const detachDrag = this.setupDragBehavior(header, modal);
+
+    backdrop.addEventListener('click', () => this.close());
+    modal.addEventListener('click', (e) => e.stopPropagation());
+    modal.addEventListener('mousedown', (e) => e.stopPropagation());
+
+    const cleanup = () => {
+      detachDrag();
+      this.animateClose(modal, backdrop);
+      
+      const modalId = modal.getAttribute('data-modal-id');
+      if (modalId) {
+        TranslationModal.modalRegistry.delete(modalId);
+        TranslationModal.creatingModals.delete(modalId);
+      }
+    };
+
+    this.setupRemovalObserver(modal, backdrop);
+    this.modal = modal;
+    this.cleanup = cleanup;
+
+    return { modal, backdrop, cleanup };
+  }
+
+  private createHeader(): HTMLDivElement {
     const header = createDiv('translation-modal__header');
     const title = createSpan('translation-modal__title', 'Translation');
     const closeBtn = createButton(
@@ -162,64 +183,26 @@ export class TranslationModal {
     );
 
     appendChildren(header, title, closeBtn);
+    return header;
+  }
 
-    // Create content area
+  private createContent(): HTMLDivElement {
     const content = createDiv('translation-modal__content');
-
-    const originalSection = this.createTextSection(
-      'Original Text',
-      this.data.originalText,
-      'original-text-content'
-    );
+    const originalSection = this.createTextSection('Original Text', this.data.originalText, 'original-text-content');
     const divider = createDiv('translation-modal__divider');
-
-    const translatedSection = this.createTextSection(
-      'Translated Text',
-      this.data.translatedText,
-      'translated-text-content'
-    );
+    const translatedSection = this.createTextSection('Translated Text', this.data.translatedText, 'translated-text-content');
 
     appendChildren(content, originalSection, divider, translatedSection);
+    return content;
+  }
 
-    // Create footer with copy buttons
+  private createFooter(): HTMLDivElement {
     const footer = createDiv('translation-modal__footer');
     const copyOriginalBtn = this.createCopyButton('Copy Original', this.data.originalText);
     const copyTranslationBtn = this.createCopyButton('Copy Translation', this.data.translatedText);
 
     appendChildren(footer, copyOriginalBtn, copyTranslationBtn);
-
-    // Assemble modal
-    appendChildren(modal, header, content, footer);
-
-    const detachDrag = this.attachDragBehavior(header, modal);
-
-    // Setup backdrop click to close
-    backdrop.addEventListener('click', () => this.close());
-
-    // Prevent modal clicks from propagating to backdrop
-    modal.addEventListener('click', (e) => e.stopPropagation());
-    modal.addEventListener('mousedown', (e) => e.stopPropagation());
-
-    // Setup cleanup function
-    const cleanup = () => {
-      detachDrag();
-      this.animateClose(modal, backdrop);
-      
-      // Clean up registry
-      const modalId = modal.getAttribute('data-modal-id');
-      if (modalId) {
-        modalRegistry.delete(modalId);
-        creatingModals.delete(modalId);
-      }
-    };
-
-    // Monitor for programmatic removal
-    this.setupRemovalObserver(modal, backdrop);
-
-    this.modal = modal;
-    this.cleanup = cleanup;
-
-    return { modal, backdrop, cleanup };
+    return footer;
   }
 
   private animateClose(modal: HTMLDivElement, backdrop: HTMLDivElement): void {
@@ -247,23 +230,20 @@ export class TranslationModal {
 
   async show(): Promise<void> {
     try {
-      const modalId = createModalId(this.data);
+      const modalId = TranslationModal.createModalId(this.data);
       
-      // Check if modal is already being created
-      if (creatingModals.has(modalId)) {
+      if (TranslationModal.creatingModals.has(modalId)) {
         console.log('Modal creation already in progress, skipping duplicate');
         return;
       }
       
-      // Check if modal already exists
-      const existingModal = modalRegistry.get(modalId);
+      const existingModal = TranslationModal.modalRegistry.get(modalId);
       if (existingModal && document.body.contains(existingModal)) {
         console.log('Modal already exists, bringing to front');
         existingModal.style.zIndex = String(999999);
         return;
       }
       
-      // Check for any existing modal with same content in DOM
       const existingModalInDOM = document.querySelector(`[data-modal-id="${modalId}"]`);
       if (existingModalInDOM) {
         console.log('Found existing modal in DOM, skipping duplicate');
@@ -271,32 +251,26 @@ export class TranslationModal {
         return;
       }
       
-      // Mark as being created
-      creatingModals.add(modalId);
+      TranslationModal.creatingModals.add(modalId);
       
       const { modal, backdrop } = await this.buildModalStructure();
       
-      // Set modal ID for deduplication
       modal.setAttribute('data-modal-id', modalId);
-      modalRegistry.set(modalId, modal);
+      TranslationModal.modalRegistry.set(modalId, modal);
       
-      // Add entering animation class
       addClasses(modal, 'modal-entering');
       
-      // Append to DOM
       appendChildren(document.body, backdrop, modal);
       
-      // Trigger animation
       requestAnimationFrame(() => {
         removeClasses(modal, 'modal-entering');
         addClasses(modal, 'modal-entered');
-        // Mark creation as complete
-        creatingModals.delete(modalId);
+        TranslationModal.creatingModals.delete(modalId);
       });
       
     } catch (err) {
-      const modalId = createModalId(this.data);
-      creatingModals.delete(modalId); 
+      const modalId = TranslationModal.createModalId(this.data);
+      TranslationModal.creatingModals.delete(modalId); 
       throw new ApplicationError(
         'system',
         `Failed to create popup: ${err instanceof Error ? err.message : String(err)}`

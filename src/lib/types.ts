@@ -23,6 +23,20 @@ export const LanguageCodeSchema = z
     'Invalid language code format'
   );
 
+export const SourceLanguageCodeSchema = z
+  .string()
+  .regex(
+    /^(auto-detect|[a-z]{2}(-[A-Z]{2})?)$/,
+    'Invalid source language code format'
+  );
+
+export const TargetLanguageCodeSchema = z
+  .string()
+  .regex(
+    /^[a-z]{2}(-[A-Z]{2})?$/,
+    'Invalid target language code format - auto-detect not allowed'
+  );
+
 export const ThemeModeSchema = z.enum(['auto', 'light', 'dark']);
 export const ThemeSchema = z.enum(['light', 'dark']);
 
@@ -79,6 +93,17 @@ export const ThemeChangedMessageSchema = z.object({
   }),
 });
 
+export const StoragePreferencesSchema = z.object({
+  fromLanguage: LanguageCodeSchema.optional(),
+  toLanguage: LanguageCodeSchema.optional(),
+  themeMode: ThemeModeSchema.optional(),
+});
+
+export const PreferencesChangedMessageSchema = z.object({
+  type: z.literal('preferences-changed'),
+  payload: StoragePreferencesSchema,
+});
+
 export const MessageSchema = z.discriminatedUnion('type', [
   PingMessageSchema,
   CleanupOverlaysMessageSchema,
@@ -87,15 +112,10 @@ export const MessageSchema = z.discriminatedUnion('type', [
   TranslationResultMessageSchema,
   RunTranslationMessageSchema,
   ThemeChangedMessageSchema,
+  PreferencesChangedMessageSchema,
 ]);
 
 export type Message = z.infer<typeof MessageSchema>;
-
-export const StoragePreferencesSchema = z.object({
-  fromLanguage: LanguageCodeSchema.optional(),
-  toLanguage: LanguageCodeSchema.optional(),
-  themeMode: ThemeModeSchema.optional(),
-});
 
 export type StoragePreferences = z.infer<typeof StoragePreferencesSchema>;
 
@@ -132,6 +152,14 @@ export function validateTabId(data: unknown): number {
 
 export function validateLanguageCode(data: unknown): string {
   return LanguageCodeSchema.parse(data);
+}
+
+export function validateSourceLanguageCode(data: unknown): string {
+  return SourceLanguageCodeSchema.parse(data);
+}
+
+export function validateTargetLanguageCode(data: unknown): string {
+  return TargetLanguageCodeSchema.parse(data);
 }
 
 export function validateBase64ImageDataUrl(data: unknown): string {

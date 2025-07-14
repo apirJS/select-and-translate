@@ -1,5 +1,5 @@
 import { BrowserAdapter } from '../adapters/browser';
-import { safeParseStoragePreferences, type StoragePreferences, validateLanguageCode } from '../lib/types';
+import { safeParseStoragePreferences, type StoragePreferences, validateSourceLanguageCode, validateTargetLanguageCode } from '../lib/types';
 
 export class ConfigService {
   private static instance: ConfigService;
@@ -46,11 +46,20 @@ export class ConfigService {
     
     await this.browserAdapter.storage.sync.set(updatedPreferences);
     this.cachedPreferences = updatedPreferences;
+    
+    try {
+      await this.browserAdapter.runtime.sendMessage({
+        type: 'preferences-changed',
+        payload: updatedPreferences
+      });
+    } catch (error) {
+      console.log('[ConfigService.setPreferences] Could not notify background script of preference changes:', error);
+    }
   }
 
   async setLanguages(fromLanguage: string, toLanguage: string): Promise<void> {
-    const validatedFromLang = validateLanguageCode(fromLanguage);
-    const validatedToLang = validateLanguageCode(toLanguage);
+    const validatedFromLang = validateSourceLanguageCode(fromLanguage);
+    const validatedToLang = validateTargetLanguageCode(toLanguage);
     
     await this.setPreferences({
       fromLanguage: validatedFromLang,
@@ -68,5 +77,14 @@ export class ConfigService {
 
   clearCache(): void {
     this.cachedPreferences = null;
+  }
+
+  handlePreferencesChanged(newPreferences: StoragePreferences): void {
+    this.cachedPreferences = newPreferences;
+  }
+
+  async refreshPreferences(): Promise<StoragePreferences> {
+    this.cachedPreferences = null;
+    return await this.getPreferences();
   }
 }
