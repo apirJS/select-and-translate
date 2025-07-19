@@ -1,13 +1,21 @@
 import { BrowserAdapter } from '../adapters/browser';
-import { safeParseStoragePreferences, type StoragePreferences, validateSourceLanguageCode, validateTargetLanguageCode } from '../lib/types';
+import {
+  safeParseStoragePreferences,
+  type StoragePreferences,
+  validateSourceLanguageCode,
+  validateTargetLanguageCode,
+} from '../lib/types';
+import { BrowserService } from '../services';
 
 export class ConfigService {
   private static instance: ConfigService;
   private cachedPreferences: StoragePreferences | null = null;
   private browserAdapter: BrowserAdapter;
+  private browserService: BrowserService;
 
   private constructor() {
     this.browserAdapter = BrowserAdapter.getInstance();
+    this.browserService = BrowserService.getInstance();
   }
 
   static getInstance(): ConfigService {
@@ -22,9 +30,13 @@ export class ConfigService {
       return this.cachedPreferences;
     }
 
-    const result = await this.browserAdapter.storage.sync.get(['fromLanguage', 'toLanguage', 'themeMode']);
+    const result = await this.browserAdapter.storage.sync.get([
+      'fromLanguage',
+      'toLanguage',
+      'themeMode',
+    ]);
     const validatedPreferences = safeParseStoragePreferences(result);
-    
+
     if (validatedPreferences.success) {
       this.cachedPreferences = validatedPreferences.data;
       return validatedPreferences.data;
@@ -33,37 +45,42 @@ export class ConfigService {
     const defaultPreferences: StoragePreferences = {
       fromLanguage: 'auto-detect',
       toLanguage: this.browserAdapter.i18n.getUILanguage() || 'en-US',
-      themeMode: 'auto'
+      themeMode: 'auto',
     };
 
     await this.setPreferences(defaultPreferences);
     return defaultPreferences;
   }
 
-  async setPreferences(preferences: Partial<StoragePreferences>): Promise<void> {
+  async setPreferences(
+    preferences: Partial<StoragePreferences>
+  ): Promise<void> {
     const currentPreferences = await this.getPreferences();
     const updatedPreferences = { ...currentPreferences, ...preferences };
-    
+
     await this.browserAdapter.storage.sync.set(updatedPreferences);
     this.cachedPreferences = updatedPreferences;
-    
+
     try {
       await this.browserAdapter.runtime.sendMessage({
         type: 'preferences-changed',
-        payload: updatedPreferences
+        payload: updatedPreferences,
       });
     } catch (error) {
-      console.log('[ConfigService.setPreferences] Could not notify background script of preference changes:', error);
+      console.log(
+        '[ConfigService.setPreferences] Could not notify background script of preference changes:',
+        error
+      );
     }
   }
 
   async setLanguages(fromLanguage: string, toLanguage: string): Promise<void> {
     const validatedFromLang = validateSourceLanguageCode(fromLanguage);
     const validatedToLang = validateTargetLanguageCode(toLanguage);
-    
+
     await this.setPreferences({
       fromLanguage: validatedFromLang,
-      toLanguage: validatedToLang
+      toLanguage: validatedToLang,
     });
   }
 
@@ -71,7 +88,10 @@ export class ConfigService {
     const preferences = await this.getPreferences();
     return {
       fromLanguage: preferences.fromLanguage || 'auto-detect',
-      toLanguage: preferences.toLanguage || this.browserAdapter.i18n.getUILanguage() || 'en-US'
+      toLanguage:
+        preferences.toLanguage ||
+        this.browserAdapter.i18n.getUILanguage() ||
+        'en-US',
     };
   }
 
@@ -86,5 +106,10 @@ export class ConfigService {
   async refreshPreferences(): Promise<StoragePreferences> {
     this.cachedPreferences = null;
     return await this.getPreferences();
+  }
+
+  async getCurrentShortcutKeys(): Promise<string> {
+    const shortcutKeys = await this.browserService.getMainCommandShortcutKeys();
+    return shortcutKeys.join('+');
   }
 }

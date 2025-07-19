@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => ({
   publicDir: false,
   define: {
     Module: {},
+    __FORCE_AUTHENTICATED__: JSON.stringify(process.env.FORCE_AUTHENTICATED === 'true'),
   },
   plugins: [
     moveHtmlToRoot(),

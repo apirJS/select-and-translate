@@ -1,5 +1,6 @@
 import { showModalToViewport } from '../lib/dom/modal';
 import { hideLoadingToast } from '../lib/dom/loadingToast';
+import { SignInToast } from '../lib/dom/signInToast';
 import {  selectAndCropImage } from '../lib/dom/overlay';
 import { existingCanvasAndOverlayCleanup } from '../lib/dom/overlay';
 import { applyThemeToDocument } from '../lib/dom/theme';
@@ -36,6 +37,9 @@ export class ContentMessageHandler {
 
         case 'theme-changed':
           return await this.handleThemeChanged(typedMessage.payload);
+
+        case 'show-signin-toast':
+          return await this.handleShowSignInToast();
 
         case 'error':
           return await this.handleError();
@@ -77,11 +81,19 @@ export class ContentMessageHandler {
       modal.classList.add(`theme-${payload.theme}`);
     });
 
+    const signInToast = SignInToast.getInstance();
+    signInToast.updateTheme(payload.theme);
+
     document.documentElement.classList.remove('theme-light', 'theme-dark');
     document.documentElement.classList.add(`theme-${payload.theme}`);
   }
 
   private async handleError(): Promise<void> {
     await hideLoadingToast('failed');
+  }
+
+  private async handleShowSignInToast(): Promise<void> {
+    const signInToast = SignInToast.getInstance();
+    signInToast.show();
   }
 }

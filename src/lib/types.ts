@@ -104,6 +104,24 @@ export const PreferencesChangedMessageSchema = z.object({
   payload: StoragePreferencesSchema,
 });
 
+export const ShowSignInToastMessageSchema = z.object({
+  type: z.literal('show-signin-toast'),
+  payload: z.object({}),
+});
+
+export const RequestOAuthMessageSchema = z.object({
+  type: z.literal('request-oauth'),
+  payload: z.object({}),
+});
+
+export const OAuthResultMessageSchema = z.object({
+  type: z.literal('oauth-result'),
+  payload: z.object({
+    success: z.boolean(),
+    error: z.string().optional(),
+  }),
+});
+
 export const MessageSchema = z.discriminatedUnion('type', [
   PingMessageSchema,
   CleanupOverlaysMessageSchema,
@@ -113,6 +131,9 @@ export const MessageSchema = z.discriminatedUnion('type', [
   RunTranslationMessageSchema,
   ThemeChangedMessageSchema,
   PreferencesChangedMessageSchema,
+  ShowSignInToastMessageSchema,
+  RequestOAuthMessageSchema,
+  OAuthResultMessageSchema,
 ]);
 
 export type Message = z.infer<typeof MessageSchema>;

@@ -61,10 +61,9 @@ export class BrowserService {
     );
   }
 
-  normalizeKeyForComparison(key: string): string {
+  private normalizeKeyForComparison(key: string): string {
     key = key.toLowerCase();
 
-    // Map special keys
     const keyMap: Record<string, string> = {
       ' ': 'space',
       spacebar: 'space',

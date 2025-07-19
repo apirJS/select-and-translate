@@ -40,6 +40,10 @@ export class BrowserAdapter {
     return browser.commands;
   }
 
+  get identity() {
+    return browser.identity
+  }
+
   onCommand(callback: (command: string) => void): void {
     browser.commands.onCommand.addListener(callback);
   }

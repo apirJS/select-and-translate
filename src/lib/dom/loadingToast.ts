@@ -16,7 +16,7 @@ export class LoadingToast {
   private static instance: LoadingToast | null = null;
 
   constructor() {
-    injectComponentStyles('toast');
+    injectComponentStyles('loading-toast');
   }
 
   static getInstance(): LoadingToast {

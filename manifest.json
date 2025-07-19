@@ -29,16 +29,16 @@
     "128": "assets/img/icon-128.png",
     "256": "assets/img/icon-256.png"
   },
-  "permissions": ["scripting", "tabs", "activeTab", "notifications", "storage"],
+  "permissions": [
+    "scripting",
+    "tabs",
+    "activeTab",
+    "notifications",
+    "storage",
+    "identity"
+  ],
   "host_permissions": ["<all_urls>"],
   "commands": {
-    "_execute_action": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+Space",
-        "mac": "Command+Shift+Space"
-      },
-      "description": "Select and Translate"
-    },
     "select_and_translate": {
       "suggested_key": {
         "default": "Ctrl+Shift+Space",
@@ -56,5 +56,9 @@
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "oauth2": {
+    "client_id": "664583959686-fhvksj46jkd9j5v96vsmvs406jgndmic.apps.googleusercontent.com",
+    "scopes": ["https://www.googleapis.com/auth/generative-language.retriever"]
   }
 }

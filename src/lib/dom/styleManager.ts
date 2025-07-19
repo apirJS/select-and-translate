@@ -1,5 +1,6 @@
 import modalStyles from '../../styles/modal.css?raw';
-import toastStyles from '../../styles/toast.css?raw';
+import loadingToastStyles from '../../styles/loadingToast.css?raw';
+import signInToastStyles from '../../styles/signInToast.css?raw';
 import overlayStyles from '../../styles/overlay.css?raw';
 import utilitiesStyles from '../../styles/utilities.css?raw';
 import colorsStyles from '../../styles/colors.css?raw';
@@ -60,8 +61,12 @@ export class StyleManagerFactory {
     return this.createManager('modal', modalStyles);
   }
 
-  static getToastManager(): ComponentStyleManager {
-    return this.createManager('toast', toastStyles);
+  static getLoadingToastManager(): ComponentStyleManager {
+    return this.createManager('loading-toast', loadingToastStyles);
+  }
+
+  static getSignInToastManager(): ComponentStyleManager {
+    return this.createManager('signin-toast', signInToastStyles);
   }
 
   static getOverlayManager(): ComponentStyleManager {
@@ -85,7 +90,8 @@ export class MasterStyleManager {
       StyleManagerFactory.getColorsManager(),
       StyleManagerFactory.getUtilitiesManager(),
       StyleManagerFactory.getModalManager(),
-      StyleManagerFactory.getToastManager(),
+      StyleManagerFactory.getLoadingToastManager(),
+      StyleManagerFactory.getSignInToastManager(),
       StyleManagerFactory.getOverlayManager(),
     ];
   }
@@ -98,10 +104,11 @@ export class MasterStyleManager {
     this.managers.forEach(manager => manager.remove());
   }
 
-  injectComponent(component: 'modal' | 'toast' | 'overlay' | 'utilities' | 'colors'): void {
+  injectComponent(component: 'modal' | 'loading-toast' | 'signin-toast' | 'overlay' | 'utilities' | 'colors'): void {
     const managerMap = {
       modal: StyleManagerFactory.getModalManager(),
-      toast: StyleManagerFactory.getToastManager(),
+      'loading-toast': StyleManagerFactory.getLoadingToastManager(),
+      'signin-toast': StyleManagerFactory.getSignInToastManager(),
       overlay: StyleManagerFactory.getOverlayManager(),
       utilities: StyleManagerFactory.getUtilitiesManager(),
       colors: StyleManagerFactory.getColorsManager(),
@@ -119,7 +126,7 @@ export class MasterStyleManager {
 
 const masterStyleManager = new MasterStyleManager();
 
-export function injectComponentStyles(component: 'modal' | 'toast' | 'overlay' | 'utilities' | 'colors'): void {
+export function injectComponentStyles(component: 'modal' | 'loading-toast' | 'signin-toast' | 'overlay' | 'utilities' | 'colors'): void {
   masterStyleManager.injectComponent(component);
 }
 
@@ -127,9 +134,9 @@ export function cleanupAllStyles(): void {
   masterStyleManager.removeAll();
 }
 
-// Legacy exports for backward compatibility
 export const modalStyleManager = StyleManagerFactory.getModalManager();
-export const toastStyleManager = StyleManagerFactory.getToastManager();
+export const loadingToastStyleManager = StyleManagerFactory.getLoadingToastManager();
+export const signInToastStyleManager = StyleManagerFactory.getSignInToastManager();
 export const overlayStyleManager = StyleManagerFactory.getOverlayManager();
 export const colorsStyleManager = StyleManagerFactory.getColorsManager();
 export const utilitiesStyleManager = StyleManagerFactory.getUtilitiesManager();
