@@ -22,8 +22,8 @@ export class AuthService {
   private constructor() {
     this.browserAdapter = BrowserAdapter.getInstance();
     this.storageService = StorageService.getInstance();
-    // Start initialization but don't wait for it in constructor
     this._initPromise = this.initializeAuthState();
+    this.setupStorageListener();
   }
 
   static getInstance(): AuthService {
@@ -41,12 +41,6 @@ export class AuthService {
 
   private async initializeAuthState(): Promise<void> {
     try {
-      if (typeof __FORCE_AUTHENTICATED__ !== 'undefined' && __FORCE_AUTHENTICATED__) {
-        this._isAuthenticated = true;
-        this._accessToken = 'dev_token_' + Date.now();
-        return;
-      }
-
       const storedToken = await this.storageService.getItem<string>(
         AuthService.ACCESS_TOKEN_KEY,
         { area: 'local' }
@@ -55,16 +49,22 @@ export class AuthService {
       if (storedToken) {
         this._accessToken = storedToken;
         this._isAuthenticated = true;
+        return;
       }
+
+      this._isAuthenticated = false;
+      this._accessToken = null;
     } catch (error) {
       console.warn('[AuthService] Failed to initialize auth state:', error);
+      this._isAuthenticated = false;
+      this._accessToken = null;
     }
   }
 
   async getOAuthToken(): Promise<string> {
     try {
       if (typeof __FORCE_AUTHENTICATED__ !== 'undefined' && __FORCE_AUTHENTICATED__) {
-        return this._accessToken!;
+        return this.simulateMockOAuthFlow();
       }
 
       if (this._accessToken) {
@@ -177,9 +177,35 @@ export class AuthService {
     return this._isAuthenticated;
   }
 
+  private async simulateMockOAuthFlow(): Promise<string> {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const mockAccessToken = `mock_dev_token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    await this.storeAccessToken(mockAccessToken);
+    this._isAuthenticated = true;
+    this._accessToken = mockAccessToken;
+    
+    return mockAccessToken;
+  }
+
+  private setupStorageListener(): void {
+    this.storageService.onChanged((changes, areaName) => {
+      if (areaName === 'local' && changes[AuthService.ACCESS_TOKEN_KEY]) {
+        const change = changes[AuthService.ACCESS_TOKEN_KEY];
+        if (change.newValue) {
+          this._accessToken = change.newValue;
+          this._isAuthenticated = true;
+        } else if (change.oldValue && !change.newValue) {
+          this._accessToken = null;
+          this._isAuthenticated = false;
+        }
+      }
+    }, 'local');
+  }
+
   private generateCryptoRandomState(): string {
     const randomBytes = new Uint8Array(32);
-    // Use global crypto in service worker context, fallback to window.crypto for content scripts
     const cryptoObj = typeof window !== 'undefined' ? window.crypto : crypto;
     cryptoObj.getRandomValues(randomBytes);
 

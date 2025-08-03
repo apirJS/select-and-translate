@@ -71,8 +71,6 @@ header {
 }
 
 h2 {
-  margin-top: 0;
-  margin-bottom: 16px;
   font-size: 18px;
   font-weight: 600;
   color: var(--accent-color);
@@ -190,6 +188,9 @@ select:focus {
   border-left: 10px solid hsl(0, 0%, 100%);
 }
 
+
+
+
 /* ==========================================================================
   LINK SECTION - External links and additional resources
   ========================================================================== */
@@ -197,7 +198,7 @@ select:focus {
 .links {
   margin-top: 16px;
   display: flex;
-  justify-content: center;
+  gap: 12px;
 }
 
 .link-button {
@@ -205,15 +206,33 @@ select:focus {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 10px 16px;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   text-decoration: none;
   transition: all 0.2s ease;
   cursor: pointer;
   background-color: hsl(214, 13%, 16%);
   color: hsl(0, 0%, 100%);
+  flex: 1;
+}
+
+.signout-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  background-color: transparent;
+  color: hsl(0, 0%, 60%);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  flex: 1;
 }
 
 .link-button:hover {
@@ -224,6 +243,44 @@ select:focus {
 
 .link-button:active {
   transform: translateY(1px);
+}
+
+.signout-button:hover {
+  background-color: var(--hover-color);
+  border-color: var(--accent-color);
+  color: var(--text-color);
+  transform: translateY(-1px);
+}
+
+.signout-button:active {
+  transform: translateY(1px);
+  background-color: var(--accent-color);
+  color: hsl(0, 0%, 100%);
+}
+
+.signout-button:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+/* Signout button visibility states */
+.signout-button.hidden {
+  display: none;
+}
+
+/* Center GitHub button when signout is hidden */
+.links:has(.signout-button.hidden) {
+  justify-content: center;
+}
+
+/* Fallback for browsers that don't support :has() */
+.links.center-github {
+  justify-content: center;
+}
+
+.links.center-github .link-button {
+  flex: none;
+  max-width: 50%;
 }
 
 .github-icon {

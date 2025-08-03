@@ -3,6 +3,7 @@ import { TabService } from '../services/tab';
 import { MessageService } from '../services/message';
 import { ErrorService } from '../services/error';
 import { AuthService } from '../services';
+import { StorageService } from '../services/storage';
 
 export class PopupController {
   private configService: ConfigService;
@@ -36,11 +37,23 @@ export class PopupController {
     this.setupEventListeners();
     await this.validateAndSaveInitialSelections();
     await this.initializeAuthState();
+    this.setupAuthStateListener();
+  }
+
+  private setupAuthStateListener(): void {
+    const storageService = StorageService.getInstance();
+    storageService.onChanged((changes: Record<string, any>, areaName: string) => {
+      if (areaName === 'local' && changes['access_token']) {
+        this.authService.ensureInitialized().then(() => {
+          this.updateButtonVisibility();
+        });
+      }
+    }, 'local');
   }
 
   private async initializeAuthState(): Promise<void> {
     try {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await this.authService.ensureInitialized();
       this.updateButtonVisibility();
     } catch (error) {
       console.error('Failed to initialize auth state:', error);
@@ -145,10 +158,16 @@ export class PopupController {
         this.handleGoogleSignIn()
       );
     }
+
+    const signoutBtn = document.getElementById('signout-btn');
+    if (signoutBtn) {
+      signoutBtn.addEventListener('click', () => this.handleSignOut());
+    }
   }
 
   private async handleGoogleSignIn(): Promise<void> {
     try {
+      await this.authService.ensureInitialized();
       await this.authService.getOAuthToken();
       this.updateButtonVisibility();
     } catch (error) {
@@ -160,13 +179,41 @@ export class PopupController {
   private updateButtonVisibility(): void {
     const googleSignInBtn = document.getElementById('google-signin-btn') as HTMLButtonElement;
     const runBtn = document.getElementById('run-btn') as HTMLButtonElement;
+    const signoutBtn = document.getElementById('signout-btn') as HTMLButtonElement;
+    const linksContainer = document.querySelector('.links') as HTMLElement;
 
     if (this.authService.isAuthenticated) {
       googleSignInBtn.style.display = 'none';
       runBtn.style.display = 'flex';
+      
+      if (signoutBtn) {
+        signoutBtn.classList.remove('hidden');
+      }
+      
+      if (linksContainer) {
+        linksContainer.classList.remove('center-github');
+      }
     } else {
       googleSignInBtn.style.display = 'flex';
       runBtn.style.display = 'none';
+      
+      if (signoutBtn) {
+        signoutBtn.classList.add('hidden');
+      }
+      
+      if (linksContainer) {
+        linksContainer.classList.add('center-github');
+      }
+    }
+  }
+
+  private async handleSignOut(): Promise<void> {
+    try {
+      await this.authService.signOut();
+      this.updateButtonVisibility();
+    } catch (error) {
+      console.error('Sign out failed:', error);
+      this.errorService.handleError(error, 'PopupController.handleSignOut');
     }
   }
 
@@ -181,7 +228,6 @@ export class PopupController {
         await this.configService.setPreferences({ toLanguage: value });
       }
     } catch (error) {
-      console.log('[handleLanguageChange] Error dawg');
       this.errorService.handleError(
         error,
         'PopupController.handleLanguageChange'
